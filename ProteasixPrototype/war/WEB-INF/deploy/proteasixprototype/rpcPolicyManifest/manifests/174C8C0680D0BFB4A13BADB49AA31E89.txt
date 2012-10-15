@@ -1,0 +1,2 @@
+serviceClass: com.google.gwt.proteasixprototype.client.GreetingService
+path: AD78F12F714E56D58425481980834ABF.gwt.rpc

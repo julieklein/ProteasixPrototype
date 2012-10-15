@@ -1,0 +1,27 @@
+<module>
+
+	<!-- Inherit the core Web Toolkit stuff. -->
+	<inherits name='com.google.gwt.user.User' />
+		
+	<source path = "client"/>
+	<public path= "public"/>
+
+	<!-- Specify the app entry point class. -->
+
+	<!-- servlet context - path is arbritray, but must match up with the rpc 
+		init inside java class -->
+	<!-- Tomcat will listen for this from the server and waits for rpc request 
+		in this context -->
+		
+	<servlet class="com.google.gwt.proteasixprototype.server.MySQLConnection"
+		path="/MySQLConnection" />
+
+
+	<inherits name="com.google.gwt.user.theme.standard.Standard" />
+	<!-- <inherits name="com.google.gwt.user.theme.chrome.Chrome"/> -->
+	<!-- <inherits name="com.google.gwt.user.theme.dark.Dark"/> -->
+
+	<entry-point
+		class="com.google.gwt.proteasixprototype.client.PrototypeEntryPoint">
+	</entry-point>
+</module>
