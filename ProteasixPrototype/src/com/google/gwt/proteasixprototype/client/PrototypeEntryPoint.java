@@ -88,9 +88,14 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 	private VerticalPanel mainTabPanel = new VerticalPanel();
 	private HorizontalPanel searchPanelHor = new HorizontalPanel();
-	private HorizontalPanel resultPanel = new HorizontalPanel();
-	private VerticalPanel resultTablePanel = new VerticalPanel();
-	private VerticalPanel resultBorderPanel = new VerticalPanel();
+	private VerticalPanel resultPanel = new VerticalPanel();
+	private TabPanel resultTabPanel = new TabPanel();
+	
+	private FlowPanel summary = new FlowPanel();
+	private FlowPanel allresult = new FlowPanel();
+	
+	private VerticalPanel gross = new VerticalPanel();
+	
 	private Label result = new Label("     Result View");
 	
 	private VerticalPanel searchPepIdPanel = new VerticalPanel();
@@ -114,6 +119,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 	
 	private VerticalPanel bottompage = new VerticalPanel();
 	
+	
 	// private Label loading = new Label("loading please wait...");
 	private Image loading = new Image();
 	private Label lbl = new Label("Please wait...");
@@ -121,6 +127,11 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private VerticalPanel ploading = new VerticalPanel();
 	private Label lResult = new Label("Result View");
 
+	private PopupPanel popuptoomuch = new PopupPanel();
+	private VerticalPanel ptoomuch = new VerticalPanel();
+	private Label lbltoomuch = new Label("Oups sorry, the search is limitated to 100 peptides!");
+	private Button closeButton = new Button("Close");
+	
 	// new css for CSTABLE
 		interface PTableResources extends CellTable.Resources {
 			@Source({ CellTable.Style.DEFAULT_CSS, "CleavageSiteTable.css" })
@@ -162,13 +173,24 @@ public class PrototypeEntryPoint implements EntryPoint {
 		ploading.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		ploading.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 		ploading.add(new HTML("<div><br /><br /><div>"));
-		loading.setUrl("/Images/ajax-loader(1).gif");
+		loading.setUrl(GWT.getModuleBaseURL() + "Images/ajax-loader(1).gif");
 		ploading.add(loading);
 		ploading.add(lbl);
 		lbl.addStyleName("lResult");
 		popup.add(ploading);
 		popup.setSize("400px", "400px");
 		popup.hide();
+		
+		ptoomuch.setHeight("400px");
+		ptoomuch.setWidth("80%"); 
+		ptoomuch.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+		ptoomuch.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+		lbltoomuch.addStyleName("lResult");
+		ptoomuch.add(lbltoomuch);
+		ptoomuch.add(closeButton);
+		popuptoomuch.add(ptoomuch);
+		popuptoomuch.setSize("400px", "400px");
+		popuptoomuch.hide();
 //
 
 		// Set Up the PROTEINSEARCH WIDGET
@@ -182,7 +204,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		pepIdArea.setWidth("200px");
 
 		searchPepUniPanel.add(new HTML(
-				"<div align=\"center\">Substrate<br />UniprotID</div>"));
+				"<div align=\"center\">Substrate<br />UniprotID or UniprotName</div>"));
 		searchPepUniPanel.add(pepUniArea);
 		searchPepUniPanel.addStyleName("pSearchpanel");
 		pepUniArea.setHeight("200px");
@@ -218,7 +240,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		searchPanelHor.add(mismPanel);
 		searchPanelHor.add(buttonPanel);
 		explanations.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
-		explanations.add(new HTML ("<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches.</font><div>"));
+		explanations.add(new HTML ("<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches.<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
 		searchPanelHor.add(explanations);
 		searchPanelHor.addStyleName("pSearchpanel");
 
@@ -239,8 +261,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 				"<div><hr style=\"height:8px;;border-width:0;color:#9FB9A8;background-color:#9FB9A8;\"></div>"));
 		bottompage.add(new HTML(
 				"<div><hr style=\"height:8px;;border-width:0;color:#FFFFFF;background-color:#FFFFFF;\"></div>"));
-		resultBorderPanel.add(new HTML(
-				"<div><hr style=\"height:8px;;border-width:0;color:#FFFFFF;background-color:#FFFFFF;\"></div>"));
+		
+		
 
 		mainTabPanel.setSize("1300px", "200px");
 		RootPanel rootPanel = RootPanel.get("protease");
@@ -252,9 +274,9 @@ public class PrototypeEntryPoint implements EntryPoint {
 			public void onClick(ClickEvent event) {
 				// keep search to setup prepared statement
 				// init rpc
-				pepIdArea.setText("P*1\nP*2\nP*3\nP*4\nP*5");
-				pepUniArea.setText("O15021\nP62328\nP02461\nQ86Y22\nP02452");
-				pepStartEndArea.setText("1189-1200\n7-18\n537-555\n235-256\n650-672");
+				pepIdArea.setText("P*1\nP*2\nP*3\nP*4");
+				pepUniArea.setText("P02458\nCO1A1_HUMAN\nP02452\nOSTP_HUMAN");
+				pepStartEndArea.setText("575-594\n212-230\n517-539\n33-42");
 				mismList.setItemSelected(3, true);
 
 			}
@@ -299,6 +321,15 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 			}
 		});
+		
+		closeButton.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				// keep search to setup prepared statement
+				// init rpc
+				popuptoomuch.hide();
+
+			}
+		});
 
 	}
 
@@ -336,6 +367,17 @@ public class PrototypeEntryPoint implements EntryPoint {
 			setUni.add(searchUni);
 		}
 		int sizeUni = setUni.size();
+		if(sizeUni>100) {
+			popup.hide();
+			popuptoomuch.show();
+			popuptoomuch.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+		          public void setPosition(int offsetWidth, int offsetHeight) {
+		            int left = (Window.getClientWidth() - offsetWidth) / 3;
+		            int top = (Window.getClientHeight() - offsetHeight) / 3;
+		            popuptoomuch.setPopupPosition(left, top);
+		          }
+			});
+		} else {
 
 		String pepID = pepIdArea.getText().toUpperCase().trim();
 		LinkedList<String> setID = null;
@@ -420,13 +462,14 @@ public class PrototypeEntryPoint implements EntryPoint {
 		}
 
 		getResultbyPeptideInfo_2(queryIn);
+		}
 
 	}
 
 	private void getResultbyPeptideInfo_2(QueryInput[] queryIn) {
 
 		// empty if anything is there already
-		resultTablePanel.clear();
+		resultPanel.clear();
 		mainTabPanel.add(resultPanel);
 		
 
@@ -441,7 +484,6 @@ public class PrototypeEntryPoint implements EntryPoint {
 			public void onSuccess(Object result) {
 
 				QueryOutput[] queryOut = (QueryOutput[]) result;
-
 				// TODO modify here
 				// draw PEPTIDE info
 			
@@ -466,15 +508,15 @@ public class PrototypeEntryPoint implements EntryPoint {
 			return;
 		}
 		
-		resultPanel.add(resultBorderPanel);
-		resultTablePanel.add(result);
+		
+		resultPanel.add(result);
 		result.addStyleName("lResult");
-//		pResultPanel_2.add(peptideTabPanel_2);
-//		peptideTabPanel_2.add(peptide_cs_2, "Cleavage sites");
-//		peptideTabPanel_2.selectTab(0);
+		resultPanel.add(resultTabPanel);
+		resultTabPanel.add(allresult, "Complete View");
+		resultTabPanel.add(summary, "Summary View");
+		resultTabPanel.selectTab(0);
 		popup.hide();
 		
-		 
 		 
 		int numbercs_2 = 0;
 		int numberdispep_2 = 0;
@@ -495,12 +537,14 @@ public class PrototypeEntryPoint implements EntryPoint {
 			resultcs_2[k] = queryOut[i];
 			k++;
 		}
+		
+		
+		
 //
 		Map<String, List<Set<String>>> hmap = new HashMap<String, List<Set<String>>>();
 		for (int i = 0; i < numbercs_2; i++) {
 			String key = resultcs_2[i].peptide.Pep_Id
 					+ resultcs_2[i].substrate.S_Symbol
-					// + resultcs_2[i].CS_terminus
 					+ resultcs_2[i].cleavagesite.CS_InputCS
 					+ resultcs_2[i].protease.P_Symbol.toUpperCase();
 			if (!(resultcs_2[i].cleavagesite.CS_OutputCS.equals("------")) && !(resultcs_2[i].peptide.Pep_Id.equals("clocloforever"))) {
@@ -607,12 +651,92 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		List<QueryOutput> resultcslist = Arrays
 				.asList(resultcsSHORT_2);
-		createCleavageSiteTable_2(resultcsSHORT_2, resultcslist);
 
-//		ploading.setVisible(false);
-//
+		Map<String, List<Set<String>>> retrievedcslist = new HashMap<String, List<Set<String>>>();
+		for (int i1 = 0; i1 < numbercs_2; i1++) {
+			String key = resultcs_2[i1].peptide.Pep_Id
+			+ resultcs_2[i1].cleavagesite.CS_NorCterm;
+			if (!(resultcs_2[i1].cleavagesite.CS_OutputCS.equals("------")) && !(resultcs_2[i1].peptide.Pep_Id.equals("clocloforever"))) {
+				if (!retrievedcslist.containsKey(key)) {
+					List value = new ArrayList<Set<String>>();
+					for (int j = 0; j < 2; j++) {
+						value.add(new HashSet<String>());
+					}
+					retrievedcslist.put(key, value);
+				}
+				retrievedcslist.get(key).get(0).add(resultcs_2[i1].peptide.Pep_Id);
+				retrievedcslist.get(key).get(1).add(resultcs_2[i1].cleavagesite.CS_NorCterm);
+			}
+		}
+		
+		System.out.println(retrievedcslist.size());
+	
+		createCleavageSiteTable_2(resultcsSHORT_2, resultcslist);
+		createSummaryTable_2(retrievedcslist);
+
+				
 	}
 //
+	private void createSummaryTable_2(Map retrievedcsmap) {
+		
+		String subUni = pepUniArea.getText().toUpperCase().trim();
+		String splitSearchUni[] = subUni.split("\n");
+		LinkedList<String> setUni = new LinkedList<String>();
+		for (String searchUni : splitSearchUni) {
+			searchUni.toUpperCase().trim();
+			setUni.add(searchUni);
+		}
+		
+		int totalpeptides = setUni.size();
+		int totalcs = totalpeptides * 2;
+		String stotalpeptides = Integer.toString(totalpeptides);
+		String stotalcs = Integer.toString(totalcs);
+		
+		summary.add(gross);
+		gross.add(new HTML("<font>Total number of submitted peptides: </font>"+ stotalpeptides));
+		gross.add(new HTML("<font>Total number of potential cleavage sites: </font>"+ stotalcs));
+		 
+		int retrievedcs = retrievedcsmap.size();
+		float percentretrievedcs = (float) retrievedcs / totalcs * 100;
+		
+		String sretrievedcs = Integer.toString(retrievedcs);
+
+		Map<String, List<Set<String>>> retrievedpeptidesmap = new HashMap<String, List<Set<String>>>();
+		Iterator iterator = retrievedcsmap.values().iterator();
+		int i = 0;
+		while (iterator.hasNext()) {
+			String values = iterator.next().toString();
+			String splitarray[] = values.split("\\], \\[");
+			String peptide = splitarray[0];
+			peptide = peptide.replaceAll("\\[", "");
+			String key = peptide;
+			if (!peptide.equals("clocloforever")){
+				if (!retrievedpeptidesmap.containsKey(key)) {
+					List value = new ArrayList<Set<String>>();
+					for (int j = 0; j < 1; j++) {
+						value.add(new HashSet<String>());
+					}
+					retrievedpeptidesmap.put(key, value);
+				}
+				retrievedpeptidesmap.get(key).get(0).add(peptide);
+				}
+			
+			i++;
+		}
+		
+		int retrievedpeptides = retrievedpeptidesmap.size();
+		float percentretrievedpeptides = (float) retrievedpeptides / totalpeptides * 100;
+		
+		String sretrievedpetpides = Integer.toString(retrievedpeptides);
+		
+		
+		gross.add(new HTML("<font>Peptides with at least one result: </font>"+ sretrievedpetpides + "<font> (</font>"+ percentretrievedpeptides + "<font>% of total number of submitted peptides)</font>"));
+		gross.add(new HTML("<font>Cleavage sites with at least one result: </font>"+ sretrievedcs + "<font> (</font>"+ percentretrievedcs + "<font>% of total number of potential cleavage sites)</font>"));
+		
+
+//		
+		
+	}
 //	
 	private void createCleavageSiteTable_2(QueryOutput[] resultcs,
 			List<QueryOutput> resultcslist) {
@@ -1097,8 +1221,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 //		csTable.setColumnWidth(extlinkCol, 5, Unit.EM);
 //		csTable.setColumnWidth(pmidCol, 5, Unit.EM);
 //
-		resultTablePanel.add(csTable);
-		resultPanel.add(resultTablePanel);
+		allresult.add(csTable);
+
 //
 		// Create a data provider.
 		ListDataProvider<QueryOutput> csdataProvider = new ListDataProvider<QueryOutput>();
@@ -1242,7 +1366,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 				// We know that the data is sorted alphabetically by default.
 				csTable.getColumnSortList().push(searchedCSCol);
-
+				
+			
 
 	}
 
