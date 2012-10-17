@@ -193,8 +193,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		popuptoomuch.hide();
 //
 
-		// Set Up the PROTEINSEARCH WIDGET
-
+		
 		// Set Up the PEPTIDESEARCH Widget
 		searchPepIdPanel.add(new HTML(
 				"<div align=\"center\">Peptide ID<br />(optionnal)</div>"));
@@ -240,7 +239,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		searchPanelHor.add(mismPanel);
 		searchPanelHor.add(buttonPanel);
 		explanations.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
-		explanations.add(new HTML ("<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches.<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
+		explanations.add(new HTML ("<div><font color=#737373 size=\"2\"><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches (still taking amino-acid restrictions into account).<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
 		searchPanelHor.add(explanations);
 		searchPanelHor.addStyleName("pSearchpanel");
 
@@ -255,6 +254,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		// Set Up the MainPanel
 		mainTabPanel.removeStyleName("gwt-TabPanelBottom");
+		
+		
 		mainTabPanel.add(searchPanelHor);
 		mainTabPanel
 		.add(new HTML(
@@ -469,6 +470,10 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private void getResultbyPeptideInfo_2(QueryInput[] queryIn) {
 
 		// empty if anything is there already
+		summary.clear();
+		allresult.clear();
+		gross.clear();
+		resultTabPanel.clear();
 		resultPanel.clear();
 		mainTabPanel.add(resultPanel);
 		
@@ -512,8 +517,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 		resultPanel.add(result);
 		result.addStyleName("lResult");
 		resultPanel.add(resultTabPanel);
-		resultTabPanel.add(allresult, "Complete View");
 		resultTabPanel.add(summary, "Summary View");
+		resultTabPanel.add(allresult, "Complete View");
 		resultTabPanel.selectTab(0);
 		popup.hide();
 		
@@ -563,7 +568,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 				hmap.get(key)
 						.get(5)
 						.add(resultcs_2[i].cleavagesite.CS_OutputCS);
-				String mismatch = resultcs_2[i].cleavagesite.CS_OuputMismatch;
+				char cmismatch = resultcs_2[i].cleavagesite.CS_OuputMismatch.charAt(0);
+				String mismatch = Character.toString(cmismatch);
 				hmap.get(key).get(6).add(mismatch);
 				hmap.get(key).get(7)
 						.add(resultcs_2[i].protease.P_Symbol.toUpperCase());
@@ -672,12 +678,13 @@ public class PrototypeEntryPoint implements EntryPoint {
 		System.out.println(retrievedcslist.size());
 	
 		createCleavageSiteTable_2(resultcsSHORT_2, resultcslist);
-		createSummaryTable_2(retrievedcslist);
+		createSummary_2(retrievedcslist, resultcsSHORT_2);
+		
 
 				
 	}
 //
-	private void createSummaryTable_2(Map retrievedcsmap) {
+	private void createSummary_2(Map retrievedcsmap, QueryOutput[] resultcsSHORT_2) {
 		
 		String subUni = pepUniArea.getText().toUpperCase().trim();
 		String splitSearchUni[] = subUni.split("\n");
@@ -692,10 +699,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		String stotalpeptides = Integer.toString(totalpeptides);
 		String stotalcs = Integer.toString(totalcs);
 		
-		summary.add(gross);
-		gross.add(new HTML("<font>Total number of submitted peptides: </font>"+ stotalpeptides));
-		gross.add(new HTML("<font>Total number of potential cleavage sites: </font>"+ stotalcs));
-		 
+		
 		int retrievedcs = retrievedcsmap.size();
 		float percentretrievedcs = (float) retrievedcs / totalcs * 100;
 		
@@ -709,6 +713,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 			String splitarray[] = values.split("\\], \\[");
 			String peptide = splitarray[0];
 			peptide = peptide.replaceAll("\\[", "");
+			peptide = peptide.replaceAll("\\]", "");
 			String key = peptide;
 			if (!peptide.equals("clocloforever")){
 				if (!retrievedpeptidesmap.containsKey(key)) {
@@ -730,11 +735,369 @@ public class PrototypeEntryPoint implements EntryPoint {
 		String sretrievedpetpides = Integer.toString(retrievedpeptides);
 		
 		
-		gross.add(new HTML("<font>Peptides with at least one result: </font>"+ sretrievedpetpides + "<font> (</font>"+ percentretrievedpeptides + "<font>% of total number of submitted peptides)</font>"));
-		gross.add(new HTML("<font>Cleavage sites with at least one result: </font>"+ sretrievedcs + "<font> (</font>"+ percentretrievedcs + "<font>% of total number of potential cleavage sites)</font>"));
+
+		summary.add(gross);
+		gross.add(new HTML("<font><dd>Total number of submitted peptides: <b>"+ stotalpeptides + "</b><br /><dd>Total number of potential cleavage sites: <b>"+ stotalcs + "</b><br /><br /><dd>Peptides with at least one result: <b>"+ sretrievedpetpides + "</b> (<b>"+ percentretrievedpeptides + "</b>% of total number of submitted peptides)<br /><dd>Cleavage sites with at least one result: <b>"+ sretrievedcs + "</b> (<b>"+ percentretrievedcs + "</b>% of total number of potential cleavage sites)</font>"));
 		
+		createSummaryTable_2(totalcs, resultcsSHORT_2);
 
 //		
+		
+	}
+	
+	private void createSummaryTable_2(int totalcs, QueryOutput[] resultcsSHORT_2) {
+		
+	
+		int numbercsSHORT_2 = resultcsSHORT_2.length;
+		
+		Map<String, List<Set<String>>> summtable = new HashMap<String, List<Set<String>>>();
+		for (int i = 0; i < numbercsSHORT_2; i++) {
+			String key = resultcsSHORT_2[i].protease.P_Symbol;
+			if (!(resultcsSHORT_2[i].cleavagesite.CS_OutputCS.equals("------")) && !(resultcsSHORT_2[i].peptide.Pep_Id.equals("clocloforever"))) {
+				if (!summtable.containsKey(key)) {
+					List value = new ArrayList<Set<String>>();
+					for (int j = 0; j < 2; j++) {
+						value.add(new HashSet<String>());
+					}
+					summtable.put(key, value);
+				}
+				summtable.get(key).get(0).add(resultcsSHORT_2[i].protease.P_Symbol);
+				char cmismatch = resultcsSHORT_2[i].cleavagesite.CS_OuputMismatch.charAt(0);
+				String mismatch = Character.toString(cmismatch);
+				summtable.get(key).get(1).add(resultcsSHORT_2[i].cleavagesite.CS_InputCS + "\t" + resultcsSHORT_2[i].cleavagesite.CS_NorCterm + "\t"+ resultcsSHORT_2[i].peptide.Pep_Id + "\t"+ mismatch);
+			}
+		}
+		
+		Iterator iterator = summtable.values().iterator();
+		int numbersumm = summtable.size();
+		SummaryTable[] summtablentry = new SummaryTable[numbersumm];	
+		int i = 0;
+		while (iterator.hasNext()) {
+			summtablentry[i] = new SummaryTable();
+			String values = iterator.next().toString();
+			String splitarray[] = values.split("\\], \\[");
+			String protease = splitarray[0];
+			protease = protease.replaceAll("\\[", "");
+			summtablentry[i].setP_Symbol(protease);
+			String allmm = splitarray[1];
+			allmm = allmm.replaceAll("\\]", "");
+			String[] allmmsplit = allmm.split(", ");
+			int j=0;
+			int number0 = 0;
+			int number1 = 0;
+			int number2 = 0;
+			int number3 = 0;
+			for (String string : allmmsplit) {
+				String[] allmmsplitsplit = string.split("\t");
+				for (String string2 : allmmsplitsplit) {
+				
+				if (string2.equals("0")) {
+					number0++;
+				} else if (string2.equals("1") ){
+					number1++;
+				}else if (string2.equals("2") ){
+					number2++;
+				}
+				else if (string2.equals("3") ){
+					number3++;
+				}
+				j++;
+			}
+			}
+			
+			summtablentry[i].setNumber0(number0);
+			summtablentry[i].setNumberupto1(number0 + number1);
+			summtablentry[i].setNumberupto2(number0 + number1 + number2);
+			summtablentry[i].setNumberupto3(number0 + number1 + number2 + number3);
+			summtablentry[i].setSnumber0(Integer.toString(number0));
+			summtablentry[i].setSnumberupto1(Integer.toString(number0 + number1));
+			summtablentry[i].setSnumberupto2(Integer.toString(number0 + number1 + number2));
+			summtablentry[i].setSnumberupto3(Integer.toString(number0 + number1 + number3));
+		
+			i++;
+		}
+
+		List<SummaryTable> resultsummlist = Arrays
+				.asList(summtablentry);
+
+		int rowssumm = summtablentry.length;
+		CellTable.Resources ptableresources = GWT.create(PTableResources.class);
+		CellTable<SummaryTable> summTable = new CellTable<SummaryTable>(
+				rowssumm, ptableresources);
+		summTable.setWidth("1280px");
+		
+		Column<SummaryTable, SafeHtml> proteaseCol = new Column<SummaryTable, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
+				String protease = resultbySubstrateData.getP_Symbol()
+						.toUpperCase();
+				return new SafeHtmlBuilder().appendHtmlConstant(protease)
+						.toSafeHtml();
+
+			}
+
+		};
+		
+		Column<SummaryTable, SafeHtml> perfectmatch = new Column<SummaryTable, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
+				int number0 = resultbySubstrateData.getNumber0();
+				String snumber0 = "";
+				snumber0 = Integer.toString(number0);
+				return new SafeHtmlBuilder().appendHtmlConstant(snumber0)
+						.toSafeHtml();
+			}
+		};
+		
+		Column<SummaryTable, SafeHtml> upto1match = new Column<SummaryTable, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
+				int number1 = resultbySubstrateData.getNumberupto1();
+				String snumber1 = "";
+				
+				int pepMismIndex = mismList.getSelectedIndex();
+				String pepMism = mismList.getItemText(pepMismIndex);
+				int pepMismNumber = 0;
+
+				if (pepMism.contains("0")) {
+					pepMismNumber = 0;
+				} else if (pepMism.contains("1")) {
+					pepMismNumber = 1;
+				} else if (pepMism.contains("2")) {
+					pepMismNumber = 2;
+				} else if (pepMism.contains("3")) {
+					pepMismNumber = 3;
+				}
+				
+				if (pepMismNumber == 0) {
+					snumber1 = "-";
+				} else {
+					snumber1 = Integer.toString(number1);
+				}
+				return new SafeHtmlBuilder().appendHtmlConstant(snumber1)
+						.toSafeHtml();
+			}
+		};
+		
+		Column<SummaryTable, SafeHtml> upto2match = new Column<SummaryTable, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
+				int number2 = resultbySubstrateData.getNumberupto2();
+				String snumber2 = "";
+				
+				int pepMismIndex = mismList.getSelectedIndex();
+				String pepMism = mismList.getItemText(pepMismIndex);
+				int pepMismNumber = 0;
+				
+				if (pepMism.contains("0")) {
+					pepMismNumber = 0;
+				} else if (pepMism.contains("1")) {
+					pepMismNumber = 1;
+				} else if (pepMism.contains("2")) {
+					pepMismNumber = 2;
+				} else if (pepMism.contains("3")) {
+					pepMismNumber = 3;
+				}
+				
+				
+				if (pepMismNumber < 2) {
+					snumber2 = "-";
+				} else {
+					snumber2 = Integer.toString(number2);
+				}
+				return new SafeHtmlBuilder().appendHtmlConstant(snumber2)
+						.toSafeHtml();
+			}
+		};
+		
+		Column<SummaryTable, SafeHtml> upto3match = new Column<SummaryTable, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
+				int number3 = resultbySubstrateData.getNumberupto3();
+				String snumber3 = "";
+				
+				int pepMismIndex = mismList.getSelectedIndex();
+				String pepMism = mismList.getItemText(pepMismIndex);
+				int pepMismNumber = 0;
+				
+				if (pepMism.contains("0")) {
+					pepMismNumber = 0;
+				} else if (pepMism.contains("1")) {
+					pepMismNumber = 1;
+				} else if (pepMism.contains("2")) {
+					pepMismNumber = 2;
+				} else if (pepMism.contains("3")) {
+					pepMismNumber = 3;
+				}
+				
+				if (pepMismNumber<3) {
+					snumber3 = "-";
+				} else {
+					snumber3 = Integer.toString(number3);
+				}
+				return new SafeHtmlBuilder().appendHtmlConstant(snumber3)
+						.toSafeHtml();
+			}
+		};
+		
+		proteaseCol.setSortable(true);
+		perfectmatch.setSortable(true);
+		upto1match.setSortable(true);
+		upto2match.setSortable(true);
+		upto3match.setSortable(true);
+		
+		summTable.addColumn(proteaseCol, "\u25B2Protease\u25BC");
+		summTable.addColumn(perfectmatch, "\u25B20 Mismatch\u25BC");
+		summTable.addColumn(upto1match, "\u25B2Up to 1 Mismatch\u25BC");
+		summTable.addColumn(upto2match, "\u25B2Up to 2 Mismatch\u25BC");
+		summTable.addColumn(upto3match, "\u25B2Up to 3 Mismatch\u25BC");
+		gross.add(summTable);
+		
+		ListDataProvider<SummaryTable> csdataProvider = new ListDataProvider<SummaryTable>();
+
+		// Connect the table to the data provider.
+		csdataProvider.addDataDisplay(summTable);
+
+		// Add the data to the data provider, which automatically pushes it to
+		// the
+		// widget
+		List<SummaryTable> summlist = csdataProvider.getList();
+		for (SummaryTable summresultTable : resultsummlist) {
+			summlist.add(summresultTable);
+		}
+		
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<SummaryTable> proteaseColSortHandler = new ListHandler<SummaryTable>(
+						summlist);
+				proteaseColSortHandler.setComparator(proteaseCol,
+						new Comparator<SummaryTable>() {
+							public int compare(SummaryTable o1,
+									SummaryTable o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.getP_Symbol()
+											.compareTo(o2.getP_Symbol()) : 1;
+								}
+								return -1;
+							}
+						});
+				summTable.addColumnSortHandler(proteaseColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				summTable.getColumnSortList().push(proteaseCol);
+
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<SummaryTable> mm0ColSortHandler = new ListHandler<SummaryTable>(
+						summlist);
+				mm0ColSortHandler.setComparator(perfectmatch,
+						new Comparator<SummaryTable>() {
+							public int compare(SummaryTable o1,
+									SummaryTable o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.getSnumber0()
+											.compareTo(o2.getSnumber0()) : 1;
+								}
+								return -1;
+							}
+						});
+				summTable.addColumnSortHandler(mm0ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				summTable.getColumnSortList().push(perfectmatch);
+				
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<SummaryTable> mm1ColSortHandler = new ListHandler<SummaryTable>(
+						summlist);
+				mm1ColSortHandler.setComparator(upto1match,
+						new Comparator<SummaryTable>() {
+							public int compare(SummaryTable o1,
+									SummaryTable o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.getSnumberupto1()
+											.compareTo(o2.getSnumberupto1()) : 1;
+								}
+								return -1;
+							}
+						});
+				summTable.addColumnSortHandler(mm1ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				summTable.getColumnSortList().push(upto1match);
+
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<SummaryTable> mm2ColSortHandler = new ListHandler<SummaryTable>(
+						summlist);
+				mm2ColSortHandler.setComparator(upto2match,
+						new Comparator<SummaryTable>() {
+							public int compare(SummaryTable o1,
+									SummaryTable o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.getSnumberupto2()
+											.compareTo(o2.getSnumberupto2()) : 1;
+								}
+								return -1;
+							}
+						});
+				summTable.addColumnSortHandler(mm2ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				summTable.getColumnSortList().push(upto2match);
+
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<SummaryTable> mm3ColSortHandler = new ListHandler<SummaryTable>(
+						summlist);
+				mm3ColSortHandler.setComparator(upto3match,
+						new Comparator<SummaryTable>() {
+							public int compare(SummaryTable o1,
+									SummaryTable o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.getSnumberupto3()
+											.compareTo(o2.getSnumberupto3()) : 1;
+								}
+								return -1;
+							}
+						});
+				summTable.addColumnSortHandler(mm3ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				summTable.getColumnSortList().push(upto3match);
+
+		
+		
 		
 	}
 //	
@@ -742,11 +1105,11 @@ public class PrototypeEntryPoint implements EntryPoint {
 			List<QueryOutput> resultcslist) {
 //
 		int rowscs = resultcs.length;
-		System.out.println(rowscs);
+		
 		CellTable.Resources ptableresources = GWT.create(PTableResources.class);
 		CellTable<QueryOutput> csTable = new CellTable<QueryOutput>(
 				rowscs, ptableresources);
-		csTable.setWidth("1300px");
+		csTable.setWidth("1280px");
 //
 //		// Create columns
 //
