@@ -1,7 +1,7 @@
-package com.google.gwt.proteasixprototype.client;
+package com.google.gwt.proteasixprototype.client.Obsolete;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
-public class CsJava_1 implements IsSerializable {
+public class Obs_CsJava_1 implements IsSerializable {
 
 	public String CS_OutSeq;	
 	public String CS_InSeq;
@@ -124,7 +124,7 @@ public class CsJava_1 implements IsSerializable {
 
 
 
-	public CsJava_1() {
+	public Obs_CsJava_1() {
 		
 	}
 	

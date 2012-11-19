@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,22 +22,21 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.gwt.proteasixprototype.client.CsJava_1;
-
 import com.google.gwt.proteasixprototype.client.CleavageSiteData;
 import com.google.gwt.proteasixprototype.client.Loop;
-import com.google.gwt.proteasixprototype.client.Mismatch;
 import com.google.gwt.proteasixprototype.client.XPathNodeUniprot;
 import com.google.gwt.proteasixprototype.client.XPathUniprotPep;
 import com.google.gwt.proteasixprototype.client.ParseUniprotPep;
 import com.google.gwt.proteasixprototype.client.PeptideData;
-import com.google.gwt.proteasixprototype.client.QueryOutput;
 import com.google.gwt.proteasixprototype.client.SubstrateData;
 import com.google.gwt.proteasixprototype.client.ProteaseData;
+import com.google.gwt.proteasixprototype.client.Mismatch;
 import com.google.gwt.proteasixprototype.client.QueryInput;
+import com.google.gwt.proteasixprototype.client.QueryOutput;
 import com.sun.source.tree.NewClassTree;
 
 import org.apache.commons.digester.rss.RSSDigester;
+import org.apache.tools.ant.taskdefs.Exit;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
@@ -49,6 +49,27 @@ import org.w3c.dom.Node;
  */
 
 public class DB_Protease extends DB_Conn {
+	private LinkedList<QueryInput> queryIn = new LinkedList<QueryInput>();
+	private LinkedList<QueryOutput> queryOut = new LinkedList<QueryOutput>();
+	private String[] nmatrixall = new String[8];
+	private int[] dvalue = new int[8];
+	private int[] nmatrixindiv = new int[20];
+	private double[] proba = new double[8];
+	private String[] aa = { "G", "P", "A", "V", "L", "I", "M", "F", "Y", "W",
+			"S", "T", "C", "N", "Q", "D", "E", "K", "R", "H" };
+	private String[] incsarray = new String[8];
+	private String[][] substitutionmatrix = new String[20][21];
+	private String[] possibleposarray = new String[8];
+
+	private boolean sequencevalidity = false;
+	private boolean breakornot = false;
+	private String SPSL = "SPSL";
+	private String SS = "SS";
+	private String HP = "HP";
+	private String P = "P";
+	private String mm1 = "1mm";
+	private String mm2 = "2mm";
+	private String mm3 = "3mm";
 
 	/**
 	 * constructor - nothing to do
@@ -57,186 +78,40 @@ public class DB_Protease extends DB_Conn {
 		// nothing to do
 	}
 
-	public CsJava_1[] getCsMISMATCHinSql(String queryCleavagesite,
-			String substrateuni, String terminus, String nOrC, String pepId, String pepSeq) throws Throwable {
-		Connection connection2 = getConn();
-		Statement s2 = connection2.createStatement();
-		CsJava_1[] csjava = null;
-		try {
-
-			System.out.println(s2);
-			ResultSet result2 = s2.executeQuery(queryCleavagesite);
-			// init object into the size we need, like a recordset
-			int rsSize2 = getResultSetSize(result2);
-			System.out.println(rsSize2 + "avant");
-
-			int i = 0;
-
-			csjava = new CsJava_1[rsSize2];
-			while (result2.next()) {
-				if (!result2.getString("CleavageSite_Sequence")
-						.equals("------")) {
-					csjava[i] = new CsJava_1();
-					String cleavageSite_Sequence = result2
-							.getString("CleavageSite_Sequence");
-					csjava[i].CS_ExternalLink = result2
-							.getString("External_link");
-					csjava[i].CS_Pmid = result2.getString("PMID");
-					csjava[i].P_UniprotId = result2.getString("P_UniprotId");
-					csjava[i].CS_InSeq = terminus;
-					csjava[i].CS_NorC = nOrC;
-					csjava[i].Pep_Id = pepId;
-					csjava[i].Pep_Seq = pepSeq;
-					int j = 0;
-
-					String searchedsplit[] = terminus.split("");
-					String foundsplit[] = cleavageSite_Sequence.split("");
-					
-					if (!searchedsplit[1].equals(foundsplit[1])) {
-						j++;
-					}
-					if (!searchedsplit[2].equals(foundsplit[2])) {
-						j++;
-					}
-					if (!searchedsplit[3].equals(foundsplit[3])) {
-						j++;
-					}
-					if (!searchedsplit[4].equals(foundsplit[4])) {
-						j++;
-					}
-					if (!searchedsplit[5].equals(foundsplit[5])) {
-						j++;
-					}
-					if (!searchedsplit[6].equals(foundsplit[6])) {
-						j++;
-					}
-					if (!searchedsplit[7].equals(foundsplit[7])) {
-						j++;
-					}
-					if (!searchedsplit[8].equals(foundsplit[8])) {
-						j++;
-					}
-					String mismatch = Integer.toString(j);
-					csjava[i].CS_mismatch = mismatch;
-					csjava[i].CS_OutSeq = cleavageSite_Sequence;
-					i++;
-				}
-			}
-			// clean up
-			result2.close();
-			s2.close();
-			connection2.close();
-		} catch (Throwable ignore) {
-			System.err.println("Mysql Statement Error: " + queryCleavagesite);
-			ignore.printStackTrace();
-		}
-		return csjava;
-	}
-
-	public String getProteaseSql(String queryProtease, String puni)
-			throws Throwable {
-		String output = null;
-		String proteasename = null;
-		String proteasesymbol = null;
-		String proteaseEc = null;
-		String proteasetaxon = null;
-		String necessaryP1 = null;
-		String necessaryP2 = null;
-		String necessaryP3 = null;
-		String necessaryP1prime = null;
-		String necessaryP2prime = null;
-		String necessaryP3prime = null;
-		String excludedP1 = null;
-		String excludedP2 = null;
-		String excludedP3 = null;
-		String excludedP1prime = null;
-		String excludedP2prime = null;
-		String excludedP3prime = null;
-		
-		Connection connection3 = getConn();
-		PreparedStatement ps3 = connection3.prepareStatement(queryProtease);
-		try {
-			ps3.setString(1, puni);
-			System.out.println(ps3);
-			ResultSet result3 = ps3.executeQuery();
-			while (result3.next()) {
-				proteasename = result3.getString("P_NL_Name");
-				proteasesymbol = result3.getString("P_Symbol");
-				proteaseEc = result3.getString("P_EC_Number");
-				proteasetaxon = result3.getString("P_Taxon");
-				necessaryP1 = result3.getString("Necessary_P1");
-				necessaryP2 = result3.getString("Necessary_P2");
-				necessaryP3 = result3.getString("Necessary_P3");
-				necessaryP1prime = result3.getString("Necessary_P1prime");
-				necessaryP2prime = result3.getString("Necessary_P2prime");
-				necessaryP3prime = result3.getString("Necessary_P3prime");
-				excludedP1 = result3.getString("Excluded_P1");
-				excludedP2 = result3.getString("Excluded_P2");
-				excludedP3 = result3.getString("Excluded_P3");
-				excludedP1prime = result3.getString("Excluded_P1prime");
-				excludedP2prime = result3.getString("Excluded_P2prime");
-				excludedP3prime = result3.getString("Excluded_P3prime");
-			}
-			output = proteasename + "\n" + proteasesymbol + "\n" + proteaseEc
-					+ "\n" + proteasetaxon + "\n" + necessaryP1 + "\n" + necessaryP2+ "\n" + necessaryP3+ "\n" + necessaryP1prime+ "\n" + necessaryP2prime+ "\n" + necessaryP3prime + "\n" + excludedP1 + "\n" + excludedP2+ "\n" + excludedP3+ "\n" + excludedP1prime+ "\n" + excludedP2prime+ "\n" + excludedP3prime;
-			result3.close();
-			ps3.clearParameters();
-			ps3.close();
-			connection3.close();
-
-		} catch (Throwable ignore) {
-
-			System.err.println("Mysql Statement Error: " + queryProtease);
-			ignore.printStackTrace();
-
-		}
-		return output;
-	}
-
-	public QueryOutput[] getResultbySubstrateInfo(QueryInput[] queryIn)
+	public QueryOutput[] getResultbySubstrateInfo(QueryInput[] queryFromWebsite)
 			throws Throwable {
 
-		int k = 0;
-		int kLast = 0;
-		int kIntN = 0;
-		int kIntC = 0;
-
-		QueryOutput[] lastcapacityarray = new QueryOutput[k];
-
-		for (QueryInput searchReq : queryIn) {
-
-			int rsSize1 = 0;
-
-			QueryOutput[] intermediatecapacityarrayNterm = null;
-			QueryOutput[] intermediatecapacityarrayCterm = null;
-
-			NodeList getNodeListbyXPath = null;
-
-			SubstrateData substrate = new SubstrateData();
-			PeptideData peptide = new PeptideData();
-
+		// // TODO modify here
+		outerloop1: for (QueryInput queryInput : queryFromWebsite) {
+			String searchUni = queryInput.substrate.S_Uniprotid;
+			String substratename = null;
+			String substratesymbol = null;
 			String fullsequence = null;
 			String pepsequence = null;
-			String nTerm = null;
 			String cTerm = null;
-			String substratename = null;
-
-			String pepSubstrateId = searchReq.getPeptideInUniprot();
-			String pepNumber = searchReq.getPeptideInId();
-			int pepStart = searchReq.getPeptideInStart();
-			int pepEnd = searchReq.getPeptideInEnd();
-
-			substrate.S_Uniprotid = pepSubstrateId;
-			peptide.Pep_Id = pepNumber;
-			peptide.Pep_Start = pepStart;
-			peptide.Pep_End = pepEnd;
-
-			int mismatch = searchReq.getPeptideInMism();
-			String proteasespecies = "Human";
-			String substratespecies = "Human";
+			String nTerm = null;
 
 			// Retrieve PEPTIDE SEQUENCE IN UNIPROT
-			Document xml = checkSubUniprot(pepSubstrateId);
+			Document xml = checkSubUniprot(searchUni);
+
+			XPathUniprotPep XPather3 = new XPathUniprotPep();
+			String xpathQuery3 = "/uniprot/entry/accession/text()";
+			NodeList getNodeListbyXPath3 = XPather3.getNodeListByXPath(
+					xpathQuery3, xml);
+			String accession = "";
+			if (getNodeListbyXPath3.getLength() > 0) {
+				XPathNodeUniprot XPathNoder3 = new XPathNodeUniprot();
+				String xpathQueryNode3 = "/uniprot/entry/accession/text()";
+				Loop l1 = new Loop();
+				for (int j1 = 0; j1 < getNodeListbyXPath3.getLength(); j1++) {
+					NodeList getNodeListByXPathNoder3 = XPathNoder3
+							.getNodeListByXPath(xpathQueryNode3,
+									getNodeListbyXPath3.item(j1));
+					LinkedList<String> stringfromNodelist3 = l1
+							.getStringfromNodelist(getNodeListByXPathNoder3);
+					accession = stringfromNodelist3.getFirst();
+				}
+			}
 
 			XPathUniprotPep XPather4 = new XPathUniprotPep();
 			String xpathQuery4 = "/uniprot/entry/protein/recommendedName/fullName/text()";
@@ -253,25 +128,17 @@ public class DB_Protease extends DB_Conn {
 									getNodeListbyXPath4.item(j1));
 					LinkedList<String> stringfromNodelist4 = l1
 							.getStringfromNodelist(getNodeListByXPathNoder4);
-
-					if (!(stringfromNodelist4.isEmpty())) {
-						substrate.S_NL_Name = stringfromNodelist4.getFirst();
-						substratename = substrate.S_NL_Name;
-					} else {
-						substrate.S_NL_Name = "---";
-						substratename = substrate.S_NL_Name;
-					}
+					substratename = !(stringfromNodelist4.isEmpty()) ? stringfromNodelist4
+							.getFirst() : "---";
 				}
 			}
-			System.out.println(substratename);
-			//
 
 			XPathUniprotPep XPather5 = new XPathUniprotPep();
 			String xpathQuery5 = "/uniprot/entry/gene/name[@type='primary']/text()";
 			NodeList getNodeListbyXPath5 = XPather5.getNodeListByXPath(
 					xpathQuery5, xml);
 
-			if (getNodeListbyXPath4.getLength() > 0) {
+			if (getNodeListbyXPath5.getLength() > 0) {
 				XPathNodeUniprot XPathNoder5 = new XPathNodeUniprot();
 				String xpathQueryNode5 = "/uniprot/entry/gene/name[@type='primary']/text()";
 				Loop l1 = new Loop();
@@ -281,14 +148,14 @@ public class DB_Protease extends DB_Conn {
 									getNodeListbyXPath5.item(j1));
 					LinkedList<String> stringfromNodelist5 = l1
 							.getStringfromNodelist(getNodeListByXPathNoder5);
-					if (!(stringfromNodelist5.isEmpty())) {
-						substrate.S_Symbol = stringfromNodelist5.getFirst();
-					} else {
-						substrate.S_Symbol = substratename;
-					}
+					substratesymbol = !(stringfromNodelist5.isEmpty()) ? stringfromNodelist5
+							.getFirst() : substratename;
+
 				}
+			} else {
+				substratesymbol = substratename;
 			}
-			
+
 			XPathUniprotPep XPather = new XPathUniprotPep();
 			String xpathQuery = "/uniprot/entry/sequence/text()";
 			NodeList getNodeListbyXPath2 = XPather.getNodeListByXPath(
@@ -306,1000 +173,756 @@ public class DB_Protease extends DB_Conn {
 							.getStringfromNodelist(getNodeListByXPathNoder2);
 					fullsequence = stringfromNodelist2.getFirst();
 					fullsequence = fullsequence.replaceAll("\n", "");
-					pepsequence = fullsequence.substring(pepStart - 1, pepEnd);
+					int start = 0;
+					int end = 0;
+					if (queryInput.peptide.Pep_sequence.equals("")) {
+						start = queryInput.peptide.Pep_Start;
+						end = queryInput.peptide.Pep_End;
+						pepsequence = fullsequence.substring(start - 1, end);
+						nTerm = retrieveNCs(start, fullsequence);
+						cTerm = retrieveCCs(end, fullsequence);
+						sequencevalidity = true;
+					} else {
+						pepsequence = queryInput.peptide.Pep_sequence
+								.toUpperCase().trim();
+						sequencevalidity = fullsequence.indexOf(pepsequence) != -1 ? true
+								: false;
+						System.out.println(fullsequence.indexOf(pepsequence));
+						System.out.println(sequencevalidity);
+						if (sequencevalidity) {
+							start = fullsequence.indexOf(pepsequence) + 1;
+							end = start + pepsequence.length() - 1;
+							pepsequence = fullsequence
+									.substring(start - 1, end);
+							nTerm = retrieveNCs(start, fullsequence);
+							cTerm = retrieveCCs(end, fullsequence);
+						} else {
+							start = 0;
+							end = 0;
+							pepsequence = queryInput.peptide.Pep_sequence
+									.toUpperCase().trim();
+							nTerm = "";
+							cTerm = "";
+							QueryInput searchRequest = new QueryInput();
+							PeptideData peptide = new PeptideData();
+							SubstrateData substrate = new SubstrateData();
+							substrate.S_Uniprotid = accession;
+							substrate.S_Symbol = substratesymbol;
+							peptide.Pep_sequence = pepsequence;
+							peptide.Pep_Seqvalidity = sequencevalidity;
+							searchRequest.setPeptide(peptide);
+							searchRequest.setSubstrate(substrate);
+							queryIn.add(searchRequest);
+							breakornot = true;
+							break outerloop1;
+						}
+					}
+					QueryInput searchRequestN = new QueryInput();
+					QueryInput searchRequestC = new QueryInput();
+					PeptideData peptide = new PeptideData();
+					SubstrateData substrate = new SubstrateData();
+					CleavageSiteData csN = new CleavageSiteData();
+					CleavageSiteData csC = new CleavageSiteData();
+					peptide.Pep_Id = queryInput.peptide.Pep_Id;
+					peptide.Pep_Start = start;
+					peptide.Pep_End = end;
 					peptide.Pep_sequence = pepsequence;
-
-					// Retrieve N-term & C-term CS
-					if (!(pepStart - 5 < 0)
-							&& !(pepEnd + 4 > fullsequence.length())) {
-						nTerm = fullsequence.substring(pepStart - 5,
-								pepStart + 3);
-						cTerm = fullsequence.substring(pepEnd - 4, pepEnd + 4);
-					} else if (!(pepStart - 5 < 0)
-							&& (pepEnd + 4 > fullsequence.length())) {
-						nTerm = fullsequence.substring(pepStart - 5,
-								pepStart + 3);
-						cTerm = fullsequence.substring(pepEnd - 4, fullsequence.length());
-						for (int i = fullsequence.length(); i < pepEnd + 4; i++) {
-							cTerm = cTerm + "-";
-						}
-					} else if ((pepStart - 5 < 0)
-							&& !(pepEnd + 4 > fullsequence.length())) {
-						cTerm = fullsequence.substring(pepEnd - 4, pepEnd + 4);
-						nTerm = fullsequence.substring(0, pepStart + 3);
-						for (int i = pepStart - 5; i < 0; i++) {
-							nTerm = "-" + nTerm;
-						}
-					} else if ((pepStart - 5 < 0)
-							&& (pepEnd + 4 > fullsequence.length())) {
-						nTerm = fullsequence.substring(0, pepStart + 3);
-						
-						for (int i = pepStart - 5; i < 0; i++) {
-							nTerm = "-" + nTerm;
-						}
-						cTerm = fullsequence.substring(pepEnd - 4, fullsequence.length());
-						for (int i = fullsequence.length(); i < pepEnd + 4; i++) {
-							cTerm = cTerm + "-";
-						}
-					}
-
+					peptide.Pep_Seqvalidity = sequencevalidity;
+					substrate.S_Uniprotid = accession;
+					substrate.S_NL_Name = substratename;
+					substrate.S_Symbol = substratesymbol;
+					csN.CS_InputCS = nTerm;
+					csN.CS_NorCterm = "NTerm";
+					csC.CS_InputCS = cTerm;
+					csC.CS_NorCterm = "CTerm";
+					searchRequestN.setCleavagesite(csN);
+					searchRequestN.setPeptide(peptide);
+					searchRequestN.setSubstrate(substrate);
+					searchRequestC.setCleavagesite(csC);
+					searchRequestC.setPeptide(peptide);
+					searchRequestC.setSubstrate(substrate);
+					queryIn.add(searchRequestN);
+					queryIn.add(searchRequestC);
 				}
 			}
-			System.out.println(nTerm);
-			System.out.println(cTerm);
-			String n1 = nTerm.substring(0, 1);
-			String n2 = nTerm.substring(1, 2);
-			String n3 = nTerm.substring(2, 3);
-			String n4 = nTerm.substring(3, 4);
-			String n5 = nTerm.substring(4, 5);
-			String n6 = nTerm.substring(5, 6);
-			String n7 = nTerm.substring(6, 7);
-			String n8 = nTerm.substring(7, 8);
-
-			String c1 = cTerm.substring(0, 1);
-			String c2 = cTerm.substring(1, 2);
-			String c3 = cTerm.substring(2, 3);
-			String c4 = cTerm.substring(3, 4);
-			String c5 = cTerm.substring(4, 5);
-			String c6 = cTerm.substring(5, 6);
-			String c7 = cTerm.substring(6, 7);
-			String c8 = cTerm.substring(7, 8);
-
-			Mismatch mismN0[] = new Mismatch[1];
-			int numismN0 = 1;
-			for (int i = 0; i < numismN0; i++) {
-				mismN0[i] = new Mismatch();
-			}
-
-			Mismatch mismC0[] = new Mismatch[1];
-			int numismC0 = 1;
-			for (int i = 0; i < numismC0; i++) {
-				mismC0[i] = new Mismatch();
-			}
-
-			Mismatch mismN1[] = new Mismatch[8];
-			int numismN1 = 8;
-			for (int i = 0; i < numismN1; i++) {
-				mismN1[i] = new Mismatch();
-			}
-
-			Mismatch mismC1[] = new Mismatch[8];
-			int numismC1 = 8;
-			for (int i = 0; i < numismC1; i++) {
-				mismC1[i] = new Mismatch();
-			}
-
-			Mismatch mismN2[] = new Mismatch[28];
-			int numismN2 = 28;
-			for (int i = 0; i < numismN2; i++) {
-				mismN2[i] = new Mismatch();
-			}
-
-			Mismatch mismC2[] = new Mismatch[28];
-			int numismC2 = 28;
-			for (int i = 0; i < numismC2; i++) {
-				mismC2[i] = new Mismatch();
-			}
-
-			Mismatch mismN3[] = new Mismatch[55];
-			int numismN3 = 55;
-			for (int i = 0; i < numismN3; i++) {
-				mismN3[i] = new Mismatch();
-			}
-
-			Mismatch mismC3[] = new Mismatch[55];
-			int numismC3 = 55;
-			for (int i = 0; i < numismC3; i++) {
-				mismC3[i] = new Mismatch();
-			}
-
-			mismN0[0].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + n6 + n7 + n8);
-			mismN0[0].setCS_NorCterm("NTerm");
-			mismN0[0].setCS_SubstrateSequence(nTerm);
-			mismC0[0].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8);
-			mismC0[0].setCS_NorCterm("CTerm");
-			mismC0[0].setCS_SubstrateSequence(cTerm);
-
-			mismN1[0].setCS_Pattern("_" + n2 + n3 + n4 + n5 + n6 + n7 + n8);
-			mismN1[1].setCS_Pattern(n1 + "_" + n3 + n4 + n5 + n6 + n7 + n8);
-			mismN1[2].setCS_Pattern(n1 + n2 + "_" + n4 + n5 + n6 + n7 + n8);
-			mismN1[3].setCS_Pattern(n1 + n2 + n3 + "_" + n5 + n6 + n7 + n8);
-			mismN1[4].setCS_Pattern(n1 + n2 + n3 + n4 + "_" + n6 + n7 + n8);
-			mismN1[5].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + "_" + n7 + n8);
-			mismN1[6].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + n6 + "_" + n8);
-			mismN1[7].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + n6 + n7 + "_");
-			for (int i = 0; i < 8; i++) {
-				mismN1[i].setCS_NorCterm("NTerm");
-				mismN1[i].setCS_SubstrateSequence(nTerm);
-			}
-
-			mismC1[0].setCS_Pattern("_" + c2 + c3 + c4 + c5 + c6 + c7 + c8);
-			mismC1[1].setCS_Pattern(c1 + "_" + c3 + c4 + c5 + c6 + c7 + c8);
-			mismC1[2].setCS_Pattern(c1 + c2 + "_" + c4 + c5 + c6 + c7 + c8);
-			mismC1[3].setCS_Pattern(c1 + c2 + c3 + "_" + c5 + c6 + c7 + c8);
-			mismC1[4].setCS_Pattern(c1 + c2 + c3 + c4 + "_" + c6 + c7 + c8);
-			mismC1[5].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + "_" + c7 + c8);
-			mismC1[6].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + c6 + "_" + c8);
-			mismC1[7].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + c6 + c7 + "_");
-			for (int i = 0; i < 8; i++) {
-				mismC1[i].setCS_NorCterm("CTerm");
-				mismC1[i].setCS_SubstrateSequence(cTerm);
-			}
-
-			mismN2[0].setCS_Pattern("_" + "_" + n3 + n4 + n5 + n6 + n7 + n8);
-			mismN2[1].setCS_Pattern("_" + n2 + "_" + n4 + n5 + n6 + n7 + n8);
-			mismN2[2].setCS_Pattern("_" + n2 + n3 + "_" + n5 + n6 + n7 + n8);
-			mismN2[3].setCS_Pattern("_" + n2 + n3 + n4 + "_" + n6 + n7 + n8);
-			mismN2[4].setCS_Pattern("_" + n2 + n3 + n4 + n5 + "_" + n7 + n8);
-			mismN2[5].setCS_Pattern("_" + n2 + n3 + n4 + n5 + n6 + "_" + n8);
-			mismN2[6].setCS_Pattern("_" + n2 + n3 + n4 + n5 + n6 + n7 + "_");
-
-			mismN2[7].setCS_Pattern(n1 + "_" + "_" + n4 + n5 + n6 + n7 + n8);
-			mismN2[8].setCS_Pattern(n1 + "_" + n3 + "_" + n5 + n6 + n7 + n8);
-			mismN2[9].setCS_Pattern(n1 + "_" + n3 + n4 + "_" + n6 + n7 + n8);
-			mismN2[10].setCS_Pattern(n1 + "_" + n3 + n4 + n5 + "_" + n7 + n8);
-			mismN2[11].setCS_Pattern(n1 + "_" + n3 + n4 + n5 + n6 + "_" + n8);
-			mismN2[12].setCS_Pattern(n1 + "_" + n3 + n4 + n5 + n6 + n7 + "_");
-
-			mismN2[13].setCS_Pattern(n1 + n2 + "_" + "_" + n5 + n6 + n7 + n8);
-			mismN2[14].setCS_Pattern(n1 + n2 + "_" + n4 + "_" + n6 + n7 + n8);
-			mismN2[15].setCS_Pattern(n1 + n2 + "_" + n4 + n5 + "_" + n7 + n8);
-			mismN2[16].setCS_Pattern(n1 + n2 + "_" + n4 + n5 + n6 + "_" + n8);
-			mismN2[17].setCS_Pattern(n1 + n2 + "_" + n4 + n5 + n6 + n7 + "_");
-
-			mismN2[18].setCS_Pattern(n1 + n2 + n3 + "_" + "_" + n6 + n7 + n8);
-			mismN2[19].setCS_Pattern(n1 + n2 + n3 + "_" + n5 + "_" + n7 + n8);
-			mismN2[20].setCS_Pattern(n1 + n2 + n3 + "_" + n5 + n6 + "_" + n8);
-			mismN2[21].setCS_Pattern(n1 + n2 + n3 + "_" + n5 + n6 + n7 + "_");
-
-			mismN2[22].setCS_Pattern(n1 + n2 + n3 + n4 + "_" + "_" + n7 + n8);
-			mismN2[23].setCS_Pattern(n1 + n2 + n3 + n4 + "_" + n6 + "_" + n8);
-			mismN2[24].setCS_Pattern(n1 + n2 + n3 + n4 + "_" + n6 + n7 + "_");
-
-			mismN2[25].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + "_" + "_" + n8);
-			mismN2[26].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + "_" + n7 + "_");
-
-			mismN2[27].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + n6 + "_" + "_");
-
-			for (int i = 0; i < 28; i++) {
-				mismN2[i].setCS_NorCterm("NTerm");
-				mismN2[i].setCS_SubstrateSequence(nTerm);
-			}
-
-			mismC2[0].setCS_Pattern("_" + "_" + c3 + c4 + c5 + c6 + c7 + c8);
-			mismC2[1].setCS_Pattern("_" + c2 + "_" + c4 + c5 + c6 + c7 + c8);
-			mismC2[2].setCS_Pattern("_" + c2 + c3 + "_" + c5 + c6 + c7 + c8);
-			mismC2[3].setCS_Pattern("_" + c2 + c3 + c4 + "_" + c6 + c7 + c8);
-			mismC2[4].setCS_Pattern("_" + c2 + c3 + c4 + c5 + "_" + c7 + c8);
-			mismC2[5].setCS_Pattern("_" + c2 + c3 + c4 + c5 + c6 + "_" + c8);
-			mismC2[6].setCS_Pattern("_" + c2 + c3 + c4 + c5 + c6 + c7 + "_");
-
-			mismC2[7].setCS_Pattern(c1 + "_" + "_" + c4 + c5 + c6 + c7 + c8);
-			mismC2[8].setCS_Pattern(c1 + "_" + c3 + "_" + c5 + c6 + c7 + c8);
-			mismC2[9].setCS_Pattern(c1 + "_" + c3 + c4 + "_" + c6 + c7 + c8);
-			mismC2[10].setCS_Pattern(c1 + "_" + c3 + c4 + c5 + "_" + c7 + c8);
-			mismC2[11].setCS_Pattern(c1 + "_" + c3 + c4 + c5 + c6 + "_" + c8);
-			mismC2[12].setCS_Pattern(c1 + "_" + c3 + c4 + c5 + c6 + c7 + "_");
-
-			mismC2[13].setCS_Pattern(c1 + c2 + "_" + "_" + c5 + c6 + c7 + c8);
-			mismC2[14].setCS_Pattern(c1 + c2 + "_" + c4 + "_" + c6 + c7 + c8);
-			mismC2[15].setCS_Pattern(c1 + c2 + "_" + c4 + c5 + "_" + c7 + c8);
-			mismC2[16].setCS_Pattern(c1 + c2 + "_" + c4 + c5 + c6 + "_" + c8);
-			mismC2[17].setCS_Pattern(c1 + c2 + "_" + c4 + c5 + c6 + c7 + "_");
-
-			mismC2[18].setCS_Pattern(c1 + c2 + c3 + "_" + "_" + c6 + c7 + c8);
-			mismC2[19].setCS_Pattern(c1 + c2 + c3 + "_" + c5 + "_" + c7 + c8);
-			mismC2[20].setCS_Pattern(c1 + c2 + c3 + "_" + c5 + c6 + "_" + c8);
-			mismC2[21].setCS_Pattern(c1 + c2 + c3 + "_" + c5 + c6 + c7 + "_");
-
-			mismC2[22].setCS_Pattern(c1 + c2 + c3 + c4 + "_" + "_" + c7 + c8);
-			mismC2[23].setCS_Pattern(c1 + c2 + c3 + c4 + "_" + c6 + "_" + c8);
-			mismC2[24].setCS_Pattern(c1 + c2 + c3 + c4 + "_" + c6 + c7 + "_");
-
-			mismC2[25].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + "_" + "_" + c8);
-			mismC2[26].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + "_" + c7 + "_");
-
-			mismC2[27].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + c6 + "_" + "_");
-
-			for (int i = 0; i < 28; i++) {
-				mismC2[i].setCS_NorCterm("CTerm");
-				mismC2[i].setCS_SubstrateSequence(cTerm);
-			}
-
-			mismN3[0].setCS_Pattern("_" + "_" + "_" + n4 + n5 + n6 + n7 + n8);
-			mismN3[1].setCS_Pattern("_" + "_" + n3 + "_" + n5 + n6 + n7 + n8);
-			mismN3[2].setCS_Pattern("_" + "_" + n3 + n4 + "_" + n6 + n7 + n8);
-			mismN3[3].setCS_Pattern("_" + "_" + n3 + n4 + n5 + "_" + n7 + n8);
-			mismN3[4].setCS_Pattern("_" + "_" + n3 + n4 + n5 + n6 + "_" + n8);
-			mismN3[5].setCS_Pattern("_" + "_" + n3 + n4 + n5 + n6 + n7 + "_");
-			mismN3[6].setCS_Pattern("_" + n2 + "_" + "_" + n5 + n6 + n7 + n8);
-			mismN3[7].setCS_Pattern("_" + n2 + "_" + n4 + "_" + n6 + n7 + n8);
-			mismN3[8].setCS_Pattern("_" + n2 + "_" + n4 + n5 + "_" + n7 + n8);
-			mismN3[9].setCS_Pattern("_" + n2 + "_" + n4 + n5 + n6 + "_" + n8);
-			mismN3[10].setCS_Pattern("_" + n2 + "_" + n4 + n5 + n6 + n7 + "_");
-			mismN3[11].setCS_Pattern("_" + n2 + n3 + "_" + "_" + n6 + n7 + n8);
-			mismN3[12].setCS_Pattern("_" + n2 + n3 + "_" + n5 + "_" + n7 + n8);
-			mismN3[13].setCS_Pattern("_" + n2 + n3 + "_" + n5 + n6 + "_" + n8);
-			mismN3[14].setCS_Pattern("_" + n2 + n3 + "_" + n5 + n6 + n7 + "_");
-			mismN3[15].setCS_Pattern("_" + n2 + n3 + n4 + "_" + "_" + n7 + n8);
-			mismN3[16].setCS_Pattern("_" + n2 + n3 + n4 + "_" + n6 + "_" + n8);
-			mismN3[17].setCS_Pattern("_" + n2 + n3 + n4 + "_" + n6 + n7 + "_");
-			mismN3[18].setCS_Pattern("_" + n2 + n3 + n4 + n5 + "_" + "_" + n8);
-			mismN3[19].setCS_Pattern("_" + n2 + n3 + n4 + n5 + "_" + n7 + "_");
-			mismN3[20].setCS_Pattern("_" + n2 + n3 + n4 + n5 + n6 + "_" + "_");
-			mismN3[21].setCS_Pattern(n1 + "_" + "_" + "_" + n5 + n6 + n7 + n8);
-			mismN3[22].setCS_Pattern(n1 + "_" + "_" + n4 + "_" + n6 + n7 + n8);
-			mismN3[23].setCS_Pattern(n1 + "_" + "_" + n4 + n5 + "_" + n7 + n8);
-			mismN3[24].setCS_Pattern(n1 + "_" + "_" + n4 + n5 + n6 + "_" + n8);
-			mismN3[25].setCS_Pattern(n1 + "_" + "_" + n4 + n5 + n6 + n7 + "_");
-			mismN3[26].setCS_Pattern(n1 + "_" + n3 + "_" + "_" + n6 + n7 + n8);
-			mismN3[27].setCS_Pattern(n1 + "_" + n3 + "_" + n5 + "_" + n7 + n8);
-			mismN3[28].setCS_Pattern(n1 + "_" + n3 + "_" + n5 + n6 + "_" + n8);
-			mismN3[29].setCS_Pattern(n1 + "_" + n3 + "_" + n5 + n6 + n7 + "_");
-			mismN3[30].setCS_Pattern(n1 + "_" + n3 + n4 + "_" + "_" + n7 + n8);
-			mismN3[31].setCS_Pattern(n1 + "_" + n3 + n4 + "_" + n6 + "_" + n8);
-			mismN3[32].setCS_Pattern(n1 + "_" + n3 + n4 + "_" + n6 + n7 + "_");
-			mismN3[33].setCS_Pattern(n1 + "_" + n3 + n4 + n5 + "_" + "_" + n8);
-			mismN3[34].setCS_Pattern(n1 + "_" + n3 + n4 + n5 + "_" + n7 + "_");
-			mismN3[35].setCS_Pattern(n1 + "_" + n3 + n4 + n5 + n6 + "_" + "_");
-			mismN3[36].setCS_Pattern(n1 + n2 + "_" + "_" + "_" + n6 + n7 + n8);
-			mismN3[37].setCS_Pattern(n1 + n2 + "_" + "_" + n5 + "_" + n7 + n8);
-			mismN3[38].setCS_Pattern(n1 + n2 + "_" + "_" + n5 + n6 + "_" + n8);
-			mismN3[39].setCS_Pattern(n1 + n2 + "_" + "_" + n5 + n6 + n7 + "_");
-			mismN3[40].setCS_Pattern(n1 + n2 + "_" + n4 + "_" + "_" + n7 + n8);
-			mismN3[41].setCS_Pattern(n1 + n2 + "_" + n4 + "_" + n6 + "_" + n8);
-			mismN3[42].setCS_Pattern(n1 + n2 + "_" + n4 + n5 + "_" + "_" + n8);
-			mismN3[43].setCS_Pattern(n1 + n2 + "_" + n4 + n5 + "_" + n7 + "_");
-			mismN3[44].setCS_Pattern(n1 + n2 + "_" + n4 + n5 + n6 + "_" + "_");
-			mismN3[45].setCS_Pattern(n1 + n2 + n3 + "_" + "_" + "_" + n7 + n8);
-			mismN3[46].setCS_Pattern(n1 + n2 + n3 + "_" + "_" + n6 + "_" + n8);
-			mismN3[47].setCS_Pattern(n1 + n2 + n3 + "_" + "_" + n6 + n7 + "_");
-			mismN3[48].setCS_Pattern(n1 + n2 + n3 + "_" + n5 + "_" + "_" + n8);
-			mismN3[49].setCS_Pattern(n1 + n2 + n3 + "_" + n5 + "_" + n7 + "_");
-			mismN3[50].setCS_Pattern(n1 + n2 + n3 + "_" + n5 + n6 + "_" + "_");
-			mismN3[51].setCS_Pattern(n1 + n2 + n3 + n4 + "_" + "_" + "_" + n8);
-			mismN3[52].setCS_Pattern(n1 + n2 + n3 + n4 + "_" + "_" + n7 + "_");
-			mismN3[53].setCS_Pattern(n1 + n2 + n3 + n4 + "_" + n6 + "_" + "_");
-			mismN3[54].setCS_Pattern(n1 + n2 + n3 + n4 + n5 + "_" + "_" + "_");
-
-			for (int i = 0; i < 55; i++) {
-				mismN3[i].setCS_NorCterm("NTerm");
-				mismN3[i].setCS_SubstrateSequence(nTerm);
-			}
-			mismC3[0].setCS_Pattern("_" + "_" + "_" + c4 + c5 + c6 + c7 + c8);
-			mismC3[1].setCS_Pattern("_" + "_" + c3 + "_" + c5 + c6 + c7 + c8);
-			mismC3[2].setCS_Pattern("_" + "_" + c3 + c4 + "_" + c6 + c7 + c8);
-			mismC3[3].setCS_Pattern("_" + "_" + c3 + c4 + c5 + "_" + c7 + c8);
-			mismC3[4].setCS_Pattern("_" + "_" + c3 + c4 + c5 + c6 + "_" + c8);
-			mismC3[5].setCS_Pattern("_" + "_" + c3 + c4 + c5 + c6 + c7 + "_");
-			mismC3[6].setCS_Pattern("_" + c2 + "_" + "_" + c5 + c6 + c7 + c8);
-			mismC3[7].setCS_Pattern("_" + c2 + "_" + c4 + "_" + c6 + c7 + c8);
-			mismC3[8].setCS_Pattern("_" + c2 + "_" + c4 + c5 + "_" + c7 + c8);
-			mismC3[9].setCS_Pattern("_" + c2 + "_" + c4 + c5 + c6 + "_" + c8);
-			mismC3[10].setCS_Pattern("_" + c2 + "_" + c4 + c5 + c6 + c7 + "_");
-			mismC3[11].setCS_Pattern("_" + c2 + c3 + "_" + "_" + c6 + c7 + c8);
-			mismC3[12].setCS_Pattern("_" + c2 + c3 + "_" + c5 + "_" + c7 + c8);
-			mismC3[13].setCS_Pattern("_" + c2 + c3 + "_" + c5 + c6 + "_" + c8);
-			mismC3[14].setCS_Pattern("_" + c2 + c3 + "_" + c5 + c6 + c7 + "_");
-			mismC3[15].setCS_Pattern("_" + c2 + c3 + c4 + "_" + "_" + c7 + c8);
-			mismC3[16].setCS_Pattern("_" + c2 + c3 + c4 + "_" + c6 + "_" + c8);
-			mismC3[17].setCS_Pattern("_" + c2 + c3 + c4 + "_" + c6 + c7 + "_");
-			mismC3[18].setCS_Pattern("_" + c2 + c3 + c4 + c5 + "_" + "_" + c8);
-			mismC3[19].setCS_Pattern("_" + c2 + c3 + c4 + c5 + "_" + c7 + "_");
-			mismC3[20].setCS_Pattern("_" + c2 + c3 + c4 + c5 + c6 + "_" + "_");
-			mismC3[21].setCS_Pattern(c1 + "_" + "_" + "_" + c5 + c6 + c7 + c8);
-			mismC3[22].setCS_Pattern(c1 + "_" + "_" + c4 + "_" + c6 + c7 + c8);
-			mismC3[23].setCS_Pattern(c1 + "_" + "_" + c4 + c5 + "_" + c7 + c8);
-			mismC3[24].setCS_Pattern(c1 + "_" + "_" + c4 + c5 + c6 + "_" + c8);
-			mismC3[25].setCS_Pattern(c1 + "_" + "_" + c4 + c5 + c6 + c7 + "_");
-			mismC3[26].setCS_Pattern(c1 + "_" + c3 + "_" + "_" + c6 + c7 + c8);
-			mismC3[27].setCS_Pattern(c1 + "_" + c3 + "_" + c5 + "_" + c7 + c8);
-			mismC3[28].setCS_Pattern(c1 + "_" + c3 + "_" + c5 + c6 + "_" + c8);
-			mismC3[29].setCS_Pattern(c1 + "_" + c3 + "_" + c5 + c6 + c7 + "_");
-			mismC3[30].setCS_Pattern(c1 + "_" + c3 + c4 + "_" + "_" + c7 + c8);
-			mismC3[31].setCS_Pattern(c1 + "_" + c3 + c4 + "_" + c6 + "_" + c8);
-			mismC3[32].setCS_Pattern(c1 + "_" + c3 + c4 + "_" + c6 + c7 + "_");
-			mismC3[33].setCS_Pattern(c1 + "_" + c3 + c4 + c5 + "_" + "_" + c8);
-			mismC3[34].setCS_Pattern(c1 + "_" + c3 + c4 + c5 + "_" + c7 + "_");
-			mismC3[35].setCS_Pattern(c1 + "_" + c3 + c4 + c5 + c6 + "_" + "_");
-			mismC3[36].setCS_Pattern(c1 + c2 + "_" + "_" + "_" + c6 + c7 + c8);
-			mismC3[37].setCS_Pattern(c1 + c2 + "_" + "_" + c5 + "_" + c7 + c8);
-			mismC3[38].setCS_Pattern(c1 + c2 + "_" + "_" + c5 + c6 + "_" + c8);
-			mismC3[39].setCS_Pattern(c1 + c2 + "_" + "_" + c5 + c6 + c7 + "_");
-			mismC3[40].setCS_Pattern(c1 + c2 + "_" + c4 + "_" + "_" + c7 + c8);
-			mismC3[41].setCS_Pattern(c1 + c2 + "_" + c4 + "_" + c6 + "_" + c8);
-			mismC3[42].setCS_Pattern(c1 + c2 + "_" + c4 + c5 + "_" + "_" + c8);
-			mismC3[43].setCS_Pattern(c1 + c2 + "_" + c4 + c5 + "_" + c7 + "_");
-			mismC3[44].setCS_Pattern(c1 + c2 + "_" + c4 + c5 + c6 + "_" + "_");
-			mismC3[45].setCS_Pattern(c1 + c2 + c3 + "_" + "_" + "_" + c7 + c8);
-			mismC3[46].setCS_Pattern(c1 + c2 + c3 + "_" + "_" + c6 + "_" + c8);
-			mismC3[47].setCS_Pattern(c1 + c2 + c3 + "_" + "_" + c6 + c7 + "_");
-			mismC3[48].setCS_Pattern(c1 + c2 + c3 + "_" + c5 + "_" + "_" + c8);
-			mismC3[49].setCS_Pattern(c1 + c2 + c3 + "_" + c5 + "_" + c7 + "_");
-			mismC3[50].setCS_Pattern(c1 + c2 + c3 + "_" + c5 + c6 + "_" + "_");
-			mismC3[51].setCS_Pattern(c1 + c2 + c3 + c4 + "_" + "_" + "_" + c8);
-			mismC3[52].setCS_Pattern(c1 + c2 + c3 + c4 + "_" + "_" + c7 + "_");
-			mismC3[53].setCS_Pattern(c1 + c2 + c3 + c4 + "_" + c6 + "_" + "_");
-			mismC3[54].setCS_Pattern(c1 + c2 + c3 + c4 + c5 + "_" + "_" + "_");
-
-			for (int i = 0; i < 55; i++) {
-				mismC3[i].setCS_NorCterm("CTerm");
-				mismC3[i].setCS_SubstrateSequence(cTerm);
-			}
-
-			String prequery = "";
-			String queryCleavagesite = "";
-			String csSubstrateSequence = "";
-			String nOrC = "";
-			int rsSize = 0;
-			int rsSizeC = 0;
-
-			if (mismatch == 0) {
-				int gaps = 0;
-
-				// check CS in SQL 0 MM N term
-				if (!nTerm.contains("----")) {
-					for (int j = 0; j < numismN0; j++) {
-						String cs = mismN0[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = nTerm;
-					nOrC = "NTerm";
-
-					CsJava_1[] csjava = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSize = csjava.length;
-					System.out.println(rsSize + "apres");
-					//
-					if (rsSize > 0) {
-						kIntN = rsSize + k;
-
-					} else {
-						kIntN = k;
-
-					}
-					// size the
-					// array
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-
-					if (rsSize > 0) {
-						int i = k;
-						for (int l = 0; l < csjava.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayNterm, substrate,
-									csjava[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-						}
-					}
-				} else {
-					kIntN = k;
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-				}
-				
-				// check CS in SQL 0 MM C term
-				prequery = "";
-				if (!cTerm.contains("----")) {
-					for (int j = 0; j < numismC0; j++) {
-						String cs = mismC0[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = cTerm;
-					nOrC = "CTerm";
-
-					CsJava_1[] csjavaC = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSizeC = csjavaC.length;
-					System.out.println(rsSizeC + "apres");
-					//
-					if (rsSizeC > 0) {
-						kIntC = rsSizeC + kIntN;
-					} else {
-						kIntC = kIntN;
-					}
-					// size the
-					// array
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayNterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-
-					if (rsSizeC > 0) {
-						int i = kIntN;
-						for (int l = 0; l < csjavaC.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayCterm, substrate,
-									csjavaC[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-							System.out.println("OK");
-						}
-					}
-				} else {
-					kIntC = kIntN;
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayCterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-				}
-					lastcapacityarray = intermediatecapacityarrayCterm;
-					kLast = lastcapacityarray.length;
-					System.out.println(lastcapacityarray.length + "ROULEMENT DE TAMBOUR");
-					
-					
-			} else if (mismatch == 1) {
-				int gaps = 1;
-
-				// check CS in SQL 1 MM N term
-				if (!nTerm.contains("----")) {
-					for (int j = 0; j < numismN1; j++) {
-						String cs = mismN1[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = nTerm;
-					nOrC = "NTerm";
-
-					CsJava_1[] csjava = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSize = csjava.length;
-					System.out.println(rsSize + "apres");
-					//
-					if (rsSize > 0) {
-						kIntN = rsSize + k;
-
-					} else {
-						kIntN = k;
-
-					}
-					// size the
-					// array
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-
-					if (rsSize > 0) {
-						int i = k;
-						for (int l = 0; l < csjava.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayNterm, substrate,
-									csjava[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-						}
-					}
-				} else {
-					kIntN = k;
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-				}
-				
-				// check CS in SQL 1 MM C term
-				prequery = "";
-				if (!cTerm.contains("----")) {
-					for (int j = 0; j < numismC1; j++) {
-						String cs = mismC1[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = cTerm;
-					nOrC = "CTerm";
-
-					CsJava_1[] csjavaC = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSizeC = csjavaC.length;
-					System.out.println(rsSizeC + "apres");
-					//
-					if (rsSizeC > 0) {
-						kIntC = rsSizeC + kIntN;
-					} else {
-						kIntC = kIntN;
-					}
-					// size the
-					// array
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayNterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-
-					if (rsSizeC > 0) {
-						int i = kIntN;
-						for (int l = 0; l < csjavaC.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayCterm, substrate,
-									csjavaC[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-							System.out.println("OK");
-						}
-					}
-				} else {
-					kIntC = kIntN;
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayCterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-				}
-					lastcapacityarray = intermediatecapacityarrayCterm;
-					kLast = lastcapacityarray.length;
-					System.out.println(lastcapacityarray.length + "ROULEMENT DE TAMBOUR");
-				
-	
-			} else if (mismatch == 2) {
-				int gaps = 2;
-
-				// check CS in SQL 2 MM N term
-				if (!nTerm.contains("----")) {
-					for (int j = 0; j < numismN2; j++) {
-						String cs = mismN2[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = nTerm;
-					nOrC = "NTerm";
-
-					CsJava_1[] csjava = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSize = csjava.length;
-					System.out.println(rsSize + "apres");
-					//
-					if (rsSize > 0) {
-						kIntN = rsSize + k;
-
-					} else {
-						kIntN = k;
-
-					}
-					// size the
-					// array
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-
-					if (rsSize > 0) {
-						int i = k;
-						for (int l = 0; l < csjava.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayNterm, substrate,
-									csjava[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-						}
-					}
-				} else {
-					kIntN = k ;
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-				
-				}
-				// check CS in SQL 2 MM C term
-				prequery = "";
-				if (!cTerm.contains("----")) {
-					for (int j = 0; j < numismC2; j++) {
-						String cs = mismC2[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = cTerm;
-					nOrC = "CTerm";
-
-					CsJava_1[] csjavaC = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSizeC = csjavaC.length;
-					System.out.println(rsSizeC + "apres");
-					//
-					if (rsSizeC > 0) {
-						kIntC = rsSizeC + kIntN;
-					} else {
-						kIntC = kIntN;
-
-					}
-					// size the
-					// array
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayNterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-
-					if (rsSizeC > 0) {
-						int i = kIntN;
-						for (int l = 0; l < csjavaC.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayCterm, substrate,
-									csjavaC[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-						}
-					}
-					
-				} else {
-					kIntC = kIntN;
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayNterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-				}
-
-				lastcapacityarray = intermediatecapacityarrayCterm;
-				kLast = lastcapacityarray.length;
-				System.out.println(lastcapacityarray.length
-						+ "ROULEMENT DE TAMBOUR");
-				
-				
-			} else if (mismatch == 3) {
-				int gaps = 3;
-
-				// check CS in SQL 3 MM N term
-				if (!nTerm.contains("----")) {
-					for (int j = 0; j < numismN3; j++) {
-						String cs = mismN3[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = nTerm;
-					nOrC = "NTerm";
-
-					CsJava_1[] csjava = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSize = csjava.length;
-					System.out.println(rsSize + "apres");
-					//
-					if (rsSize > 0) {
-						kIntN = rsSize + k;
-
-					} else {
-						kIntN = k;
-
-					}
-					// size the
-					// array
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-
-					if (rsSize > 0) {
-						int i = k;
-						for (int l = 0; l < csjava.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayNterm, substrate,
-									csjava[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-						}
-					}
-					
-				} else {
-					kIntN = k;
-					intermediatecapacityarrayNterm = new QueryOutput[kIntN];
-					System.arraycopy(lastcapacityarray, 0,
-							intermediatecapacityarrayNterm, 0, k);
-				}
-				
-
-				// check CS in SQL 3 MM C term
-				prequery = "";
-				if (!cTerm.contains("----")) {
-					for (int j = 0; j < numismC3; j++) {
-						String cs = mismC3[j].getCS_Pattern();
-						prequery = prequery
-								+ " OR CleavageSite_Sequence LIKE '" + cs + "'";
-					}
-					prequery = prequery.replaceFirst(" OR", "");
-
-					String queryprotspecies = "null";
-					String querysubspecies = "null";
-
-					if (proteasespecies.equals("Human")) {
-						queryprotspecies = "P_Species = 'Human'";
-					} else if (proteasespecies.equals("Mouse")) {
-						queryprotspecies = "P_Species = 'Mouse'";
-					} else if (proteasespecies.equals("Rat")) {
-						queryprotspecies = "P_Species = 'Rat'";
-					} else {
-						queryprotspecies = "";
-					}
-
-					if (substratespecies.equals("Human")) {
-						querysubspecies = "AND S_Species = 'Human' AND (";
-					} else if (substratespecies.equals("Mouse")) {
-						querysubspecies = "AND S_Species = 'Mouse' AND (";
-					} else if (substratespecies.equals("Rat")) {
-						querysubspecies = "AND S_Species = 'Rat' AND (";
-					} else {
-						querysubspecies = "(";
-					}
-
-					queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE "
-							+ queryprotspecies + querysubspecies + prequery
-							+ ")  ORDER BY P_Symbol";
-					System.out.println(queryCleavagesite);
-
-					csSubstrateSequence = cTerm;
-					nOrC = "CTerm";
-
-					CsJava_1[] csjavaC = getCsMISMATCHinSql(queryCleavagesite,
-							pepSubstrateId, csSubstrateSequence, nOrC, pepNumber, pepsequence);
-					rsSizeC = csjavaC.length;
-					System.out.println(rsSizeC + "apres");
-					//
-					if (rsSizeC > 0) {
-						kIntC = rsSizeC + kIntN;
-					} else {
-						kIntC = kIntN;
-
-					}
-					// size the
-					// array
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayNterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-
-					if (rsSizeC > 0) {
-						int i = kIntN;
-						for (int l = 0; l < csjavaC.length; l++) {
-							populateCsPERFECTSql(
-									intermediatecapacityarrayCterm, substrate,
-									csjavaC[l], i, l, pepSubstrateId,
-									pepStart, pepEnd, pepNumber, gaps, pepsequence);
-							i++;
-						}
-					}
-				} else {
-					kIntC = kIntN;
-					intermediatecapacityarrayCterm = new QueryOutput[kIntC];
-					System.arraycopy(intermediatecapacityarrayNterm, 0,
-							intermediatecapacityarrayCterm, 0, kIntN);
-				}
-				
-				lastcapacityarray = intermediatecapacityarrayCterm;
-				kLast = lastcapacityarray.length;
-				System.out.println(lastcapacityarray.length
-						+ "ROULEMENT DE TAMBOUR");
-
-			
-			}
-
-			k = kLast;
-
 		}
-		System.out.println(lastcapacityarray.length);
-		// return the array
-		return lastcapacityarray;
 
+		if (breakornot) {
+			QueryOutput[] result = new QueryOutput[queryIn.size()];
+			LinkedList<QueryOutput> resultlist = new LinkedList<QueryOutput>();
+			for (QueryInput queryInput : queryIn) {
+				QueryOutput out = new QueryOutput();
+				SubstrateData substrate2 = new SubstrateData();
+				PeptideData peptide2 = new PeptideData();
+				peptide2.Pep_sequence = queryInput.peptide.Pep_sequence;
+				peptide2.Pep_Seqvalidity = queryInput.peptide.Pep_Seqvalidity;
+				substrate2.S_Symbol = queryInput.substrate.S_Symbol;
+				substrate2.S_Uniprotid = queryInput.substrate.S_Uniprotid;
+				out.setPeptide(peptide2);
+				out.setSubstrate(substrate2);
+				resultlist.add(out);
+			}
+			resultlist.toArray(result);
+			return result;
+		}
+		
+		int rsSizeA = 0;
+		String querySubMatrix = "SELECT * FROM SUBSTITUTIONMATRIX";
+		Connection connectionA = getConn();
+		Statement sA = connectionA.createStatement();
+		try {
+			ResultSet resultA = sA.executeQuery(querySubMatrix);
+			rsSizeA = getResultSetSize(resultA);
+			int i = 0;
+			while (resultA.next()) {
+				substitutionmatrix[i][0] = resultA.getString("Substituted_aa");
+				String observedaa[] = resultA.getString("Observed_aa").split(
+						", ");
+				for (int k = 1; k < 21; k++) {
+					substitutionmatrix[i][k] = observedaa[k - 1];
+				}
+				i++;
+			}
+			resultA.close();
+			sA.close();
+			connectionA.close();
+		} catch (Throwable ignore) {
+			System.err.println("Mysql Statement Error: " + querySubMatrix);
+			ignore.printStackTrace();
+		}
+
+		int rsSize = 0;
+		String queryProtease = "SELECT * FROM PROTEASE WHERE P_Taxon = 'Human'";
+		Connection connection = getConn();
+		Statement s = connection.createStatement();
+		try {
+			ResultSet result = s.executeQuery(queryProtease);
+			rsSize = getResultSetSize(result);
+			while (result.next()) {
+				ProteaseData protease = new ProteaseData();
+				protease.P_Symbol = result.getString("P_Symbol");
+				protease.P_Uniprotid = result.getString("P_UniprotID");
+				protease.P_OMIM = result.getString("Omim");
+				for (QueryInput queryInput : queryIn) {
+					QueryOutput out = new QueryOutput();
+					SubstrateData substrate2 = new SubstrateData();
+					CleavageSiteData cs2 = new CleavageSiteData();
+					PeptideData peptide2 = new PeptideData();
+					substrate2 = queryInput.substrate;
+					cs2.CS_NorCterm = queryInput.cleavagesite.CS_NorCterm;
+					cs2.CS_InputCS = queryInput.cleavagesite.CS_InputCS;
+					cs2.CS_InputCS = queryInput.cleavagesite.CS_InputCS;
+					peptide2 = queryInput.peptide;
+					out = process(s, result, protease, queryInput, out,
+							substrate2, peptide2, cs2);
+					queryOut.add(out);
+					System.out.println(out.confidence);
+					System.out.println(out.protease.P_Symbol);
+					System.out.println(out.protease.P_Uniprotid);
+				}
+			}
+			result.close();
+			s.close();
+			connection.close();
+		} catch (Throwable ignore) {
+			System.err.println("Mysql Statement Error: " + queryProtease);
+			ignore.printStackTrace();
+		}
+
+		int sizeoutfull = queryOut.size();
+		LinkedList<QueryOutput> processedCSOutput = new LinkedList<QueryOutput>();
+		for (QueryOutput queryOutput : queryOut) {
+			if (!queryOutput.confidence.equals("discarded")) {
+				QueryOutput processedOut = new QueryOutput();
+				processedOut = queryOutput;
+				processedOut.SPSL = queryOutput.confidence.equals(SPSL) ? "A"
+						: "B";
+				processedOut.SS = queryOutput.confidence.equals(SS) ? "A" : "B";
+				processedOut.HP = queryOutput.confidence.equals(HP) ? "A" : "B";
+				processedOut.P = queryOutput.confidence.equals(P) ? "A" : "B";
+				processedOut.mm1 = queryOutput.confidence.equals(mm1) ? "A"
+						: "B";
+				processedOut.mm2 = queryOutput.confidence.equals(mm2) ? "A"
+						: "B";
+				processedOut.mm3 = queryOutput.confidence.equals(mm3) ? "A"
+						: "B";
+				processedCSOutput.add(processedOut);
+			}
+		}
+		int sizeoutprocessed = processedCSOutput.size();
+
+		QueryOutput[] result = new QueryOutput[processedCSOutput.size()];
+		processedCSOutput.toArray(result);
+		return result;
+	}
+
+	private QueryOutput process(Statement s, ResultSet result,
+			ProteaseData protease, QueryInput queryInput, QueryOutput out,
+			SubstrateData substrate, PeptideData peptide, CleavageSiteData cs)
+			throws SQLException {
+
+		String extLink = "";
+		String pmid = "";
+		String substrateUni = substrate.S_Uniprotid;
+		String incs = cs.CS_InputCS;
+		String norc = cs.CS_NorCterm;
+		int end = peptide.Pep_End;
+		int start = peptide.Pep_Start;
+		int P1 = 0;
+		P1 = norc.equals("NTerm") ? start - 1 : end;
+		String confidence = null;
+
+		String cssplit[] = incs.split("");
+		for (int i = 0; i < 8; i++) {
+			incsarray[i] = cssplit[i + 1];
+		}
+
+		int m = 0;
+		for (String realpos : incsarray) {
+			String possiblepos = "";
+			for (int k = 0; k < 20; k++) {
+				if (realpos.equals(substitutionmatrix[k][0])) {
+					for (int j = 1; j < 21; j++) {
+						if (!substitutionmatrix[k][j].equals("-")) {
+							possiblepos = possiblepos + ", " + aa[j - 1];
+						}
+					}
+				}
+			}
+			possiblepos = possiblepos.replaceFirst(", ", "");
+			possibleposarray[m] = possiblepos;
+			m++;
+		}
+
+		int rsSize2 = 0;
+		String queryCSPerfectSameSubstrate = "SELECT * FROM CLEAVAGESITE WHERE P_UniprotId ='"
+				+ protease.P_Uniprotid
+				+ "' AND S_UniprotId = '"
+				+ substrateUni
+				+ "' AND CleavageSite_Sequence = '" + incs + "' AND P1 = " + P1;
+		Connection connection2 = getConn();
+		Statement s2 = connection2.createStatement();
+		try {
+			ResultSet result2 = s2.executeQuery(queryCSPerfectSameSubstrate);
+			rsSize2 = getResultSetSize(result2);
+			if (rsSize2 != 0) {
+				return populateEntry(out, protease, queryInput, SPSL, result2,
+						extLink, pmid, substrate, peptide, cs);
+			}
+			result2.close();
+			s2.close();
+			connection2.close();
+		} catch (Throwable ignore) {
+			System.err.println("Mysql Statement Error: "
+					+ queryCSPerfectSameSubstrate);
+			ignore.printStackTrace();
+		}
+		System.out.println("no SPSL");
+		int rsSize3 = 0;
+		String queryCSPerfect = "SELECT * FROM CLEAVAGESITE WHERE P_UniprotId ='"
+				+ protease.P_Uniprotid
+				+ "' AND CleavageSite_Sequence = '"
+				+ incs
+				+ "' AND NOT (P1 ="
+				+ P1
+				+ " AND S_UniprotId = '"
+				+ substrateUni + "') AND S_Species ='Human'";
+		Connection connection3 = getConn();
+		Statement s3 = connection3.createStatement();
+		try {
+			ResultSet result3 = s3.executeQuery(queryCSPerfect);
+			rsSize3 = getResultSetSize(result3);
+			if (rsSize3 != 0) {
+				return populateEntry(out, protease, queryInput, SS, result3,
+						extLink, pmid, substrate, peptide, cs);
+			}
+			result3.close();
+			s3.close();
+			connection3.close();
+		} catch (Throwable ignore) {
+			System.err.println("Mysql Statement Error: " + queryCSPerfect);
+			ignore.printStackTrace();
+		}
+		System.out.println("no SS");
+		// UNCOMMENT
+		// nmatrixall[0] = result.getString("Array_nP4");
+		// nmatrixall[1] = result.getString("Array_nP3");
+		// nmatrixall[2] = result.getString("Array_nP2");
+		// nmatrixall[3] = result.getString("Array_nP1");
+		// nmatrixall[4] = result.getString("Array_nP1prime");
+		// nmatrixall[5] = result.getString("Array_nP2prime");
+		// nmatrixall[6] = result.getString("Array_nP3prime");
+		// nmatrixall[7] = result.getString("Array_nP4prime");
+		// dvalue[0] = result.getInt("Int_dP4");
+		// dvalue[1] = result.getInt("Int_dP3");
+		// dvalue[2] = result.getInt("Int_dP2");
+		// dvalue[3] = result.getInt("Int_dP1");
+		// dvalue[4] = result.getInt("Int_dP1prime");
+		// dvalue[5] = result.getInt("Int_dP2prime");
+		// dvalue[6] = result.getInt("Int_dP3prime");
+		// dvalue[7] = result.getInt("Int_dP4prime");
+		// double Q75 = !result.getString("Q75").equals("-") ? Double
+		// .parseDouble(result.getString("Q75")) : 0.0;
+		// double Q50 = !result.getString("Q50").equals("-") ? Double
+		// .parseDouble(result.getString("Q50")) : 0.0;
+		// double Q25 = !result.getString("Q50").equals("-") ? Double
+		// .parseDouble(result.getString("Q25")) : 0.0;
+		//
+		// if (!nmatrixall[0].contains("-") && dvalue[0] != 0) {
+		// double probatotal = 0;
+		// for (int i = 0; i < 8; i++) {
+		// String nmatrixallsplit[] = nmatrixall[i].split(", ");
+		// for (int k = 0; k < 20; k++) {
+		// nmatrixindiv[k] = Integer
+		// .parseInt(nmatrixallsplit[k]);
+		// }
+		// for (int k = 0; k < 20; k++) {
+		// if (incsarray[i].equals(aa[k])) {
+		// System.out.println(nmatrixindiv[k]);
+		// proba[i] = nmatrixindiv[k] != 0 ? (double) (Math
+		// .log(nmatrixindiv[k]) - Math
+		// .log(dvalue[i])) : 100;
+		// } else if (incsarray[i].equals("-")) {
+		// proba[i] = (double) Math.log(1);
+		// }
+		// }
+		// probatotal = probatotal + proba[i];
+		// }
+		// System.out.println(probatotal);
+		// if (probatotal >= Q75 && !(probatotal > 0)) {
+		// return populateEntryMEROPS(out, protease, queryInput,
+		// HP, result, extLink, substrate, peptide, cs);
+		// } else if (probatotal >= Q50 && !(probatotal > 0)) {
+		// return populateEntryMEROPS(out, protease, queryInput,
+		// P, result, extLink, substrate, peptide, cs);
+		// } else if (probatotal < Q25 || probatotal > 0) {
+		// confidence = "discarded";
+		// extLink = result.getString("Merops_Url");
+		// return populateEntryEmpty(out, protease, queryInput,
+		// confidence, result, extLink, substrate, peptide, cs);
+		// } else {
+		// System.out.println("no HP ou P");
+		// return processWithoutMeropsMatrix(result,
+		// protease, queryInput, out,
+		// incs, extLink, pmid, Q75,
+		// Q50, Q25, substrate, peptide, cs);
+		// }
+		// } else {
+		// System.out.println("no MEROPS matrix");
+		// return processWithoutMeropsMatrix(result,
+		// protease, queryInput, out,
+		// incs, extLink, pmid, Q75,
+		// Q50, Q25, substrate, peptide, cs);
+		// }
+		// COMMENT
+		return processWithoutMeropsMatrix(result, protease, queryInput, out,
+				incs, extLink, pmid, substrate, peptide, cs);
+	}
+
+	private QueryOutput processWithoutMeropsMatrix(ResultSet result,
+			ProteaseData protease, QueryInput queryInput, QueryOutput out,
+			String incs, String extLink, String pmid, SubstrateData substrate,
+			PeptideData peptide, CleavageSiteData cs) throws SQLException {
+		String confidence;
+
+		String necessaryP1 = result.getString("Necessary_P1");
+		String necessaryP2 = result.getString("Necessary_P2");
+		String necessaryP3 = result.getString("Necessary_P3");
+		String necessaryP1prime = result.getString("Necessary_P1prime");
+		String necessaryP2prime = result.getString("Necessary_P2prime");
+		String necessaryP3prime = result.getString("Necessary_P3prime");
+		String excludedP1 = result.getString("Excluded_P1");
+		String excludedP2 = result.getString("Excluded_P2");
+		String excludedP3 = result.getString("Excluded_P3");
+		String excludedP1prime = result.getString("Excluded_P1prime");
+		String excludedP2prime = result.getString("Excluded_P2prime");
+		String excludedP3prime = result.getString("Excluded_P3prime");
+		String[] necesP1array = necessaryP1.split(", ");
+		String[] necesP2array = necessaryP2.split(", ");
+		String[] necesP3array = necessaryP3.split(", ");
+		String[] necesP1primearray = necessaryP1prime.split(", ");
+		String[] necesP2primearray = necessaryP2prime.split(", ");
+		String[] necesP3primearray = necessaryP3prime.split(", ");
+		String[] excludP1array = excludedP1.split(", ");
+		String[] excludP2array = excludedP2.split(", ");
+		String[] excludP3array = excludedP3.split(", ");
+		String[] excludP1primearray = excludedP1prime.split(", ");
+		String[] excludP2primearray = excludedP2prime.split(", ");
+		String[] excludP3primearray = excludedP3prime.split(", ");
+
+		boolean necP1 = getExpasyNecRestrictions(incsarray[3], necesP1array);
+		boolean necP2 = getExpasyNecRestrictions(incsarray[2], necesP2array);
+		boolean necP3 = getExpasyNecRestrictions(incsarray[1], necesP3array);
+		boolean necP1prime = getExpasyNecRestrictions(incsarray[4],
+				necesP1primearray);
+		boolean necP2prime = getExpasyNecRestrictions(incsarray[5],
+				necesP2primearray);
+		boolean necP3prime = getExpasyNecRestrictions(incsarray[6],
+				necesP3primearray);
+
+		boolean exclP1 = getExpasyExclRestrictions(incsarray[3], excludP1array);
+		boolean exclP2 = getExpasyExclRestrictions(incsarray[2], excludP2array);
+		boolean exclP3 = getExpasyExclRestrictions(incsarray[1], excludP3array);
+		boolean exclP1prime = getExpasyExclRestrictions(incsarray[4],
+				excludP1primearray);
+		boolean exclP2prime = getExpasyExclRestrictions(incsarray[5],
+				excludP2primearray);
+		boolean exclP3prime = getExpasyExclRestrictions(incsarray[6],
+				excludP3primearray);
+
+		boolean validity = (necP1 && necP2 && necP3 && necP2prime && necP3prime
+				&& necP1prime && exclP1 && exclP2 && exclP3 && exclP1prime
+				&& exclP2prime && exclP3prime) ? true : false;
+		if (!validity) {
+			System.out.println("no Expasy valid");
+			confidence = "discarded";
+			extLink = "-";
+			return populateEntryEmpty(out, protease, queryInput, confidence,
+					result, extLink, substrate, peptide, cs);
+		}
+
+		String possibleP4[] = possibleposarray[0].split(", ");
+		String possibleP3[] = possibleposarray[1].split(", ");
+		String possibleP2[] = possibleposarray[2].split(", ");
+		String possibleP1[] = possibleposarray[3].split(", ");
+		String possibleP1p[] = possibleposarray[4].split(", ");
+		String possibleP2p[] = possibleposarray[5].split(", ");
+		String possibleP3p[] = possibleposarray[6].split(", ");
+		String possibleP4p[] = possibleposarray[7].split(", ");
+
+		System.out.println("yes Expasy valid");
+		Mismatch mismN3[] = new Mismatch[55];
+		int numismN3 = 55;
+		for (int i = 0; i < numismN3; i++) {
+			mismN3[i] = new Mismatch();
+		}
+
+		mismN3[0].setCS_Pattern("_" + "_" + "_" + incsarray[3] + incsarray[4]
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[1].setCS_Pattern("_" + "_" + incsarray[2] + "_" + incsarray[4]
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[2].setCS_Pattern("_" + "_" + incsarray[2] + incsarray[3] + "_"
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[3].setCS_Pattern("_" + "_" + incsarray[2] + incsarray[3]
+				+ incsarray[4] + "_" + incsarray[6] + incsarray[7]);
+		mismN3[4].setCS_Pattern("_" + "_" + incsarray[2] + incsarray[3]
+				+ incsarray[4] + incsarray[5] + "_" + incsarray[7]);
+		mismN3[5].setCS_Pattern("_" + "_" + incsarray[2] + incsarray[3]
+				+ incsarray[4] + incsarray[5] + incsarray[6] + "_");
+		mismN3[6].setCS_Pattern("_" + incsarray[1] + "_" + "_" + incsarray[4]
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[7].setCS_Pattern("_" + incsarray[1] + "_" + incsarray[3] + "_"
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[8].setCS_Pattern("_" + incsarray[1] + "_" + incsarray[3]
+				+ incsarray[4] + "_" + incsarray[6] + incsarray[7]);
+		mismN3[9].setCS_Pattern("_" + incsarray[1] + "_" + incsarray[3]
+				+ incsarray[4] + incsarray[5] + "_" + incsarray[7]);
+		mismN3[10].setCS_Pattern("_" + incsarray[1] + "_" + incsarray[3]
+				+ incsarray[4] + incsarray[5] + incsarray[6] + "_");
+		mismN3[11].setCS_Pattern("_" + incsarray[1] + incsarray[2] + "_" + "_"
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[12].setCS_Pattern("_" + incsarray[1] + incsarray[2] + "_"
+				+ incsarray[4] + "_" + incsarray[6] + incsarray[7]);
+		mismN3[13].setCS_Pattern("_" + incsarray[1] + incsarray[2] + "_"
+				+ incsarray[4] + incsarray[5] + "_" + incsarray[7]);
+		mismN3[14].setCS_Pattern("_" + incsarray[1] + incsarray[2] + "_"
+				+ incsarray[4] + incsarray[5] + incsarray[6] + "_");
+		mismN3[15].setCS_Pattern("_" + incsarray[1] + incsarray[2]
+				+ incsarray[3] + "_" + "_" + incsarray[6] + incsarray[7]);
+		mismN3[16].setCS_Pattern("_" + incsarray[1] + incsarray[2]
+				+ incsarray[3] + "_" + incsarray[5] + "_" + incsarray[7]);
+		mismN3[17].setCS_Pattern("_" + incsarray[1] + incsarray[2]
+				+ incsarray[3] + "_" + incsarray[5] + incsarray[6] + "_");
+		mismN3[18].setCS_Pattern("_" + incsarray[1] + incsarray[2]
+				+ incsarray[3] + incsarray[4] + "_" + "_" + incsarray[7]);
+		mismN3[19].setCS_Pattern("_" + incsarray[1] + incsarray[2]
+				+ incsarray[3] + incsarray[4] + "_" + incsarray[6] + "_");
+		mismN3[20].setCS_Pattern("_" + incsarray[1] + incsarray[2]
+				+ incsarray[3] + incsarray[4] + incsarray[5] + "_" + "_");
+		mismN3[21].setCS_Pattern(incsarray[0] + "_" + "_" + "_" + incsarray[4]
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[22].setCS_Pattern(incsarray[0] + "_" + "_" + incsarray[3] + "_"
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[23].setCS_Pattern(incsarray[0] + "_" + "_" + incsarray[3]
+				+ incsarray[4] + "_" + incsarray[6] + incsarray[7]);
+		mismN3[24].setCS_Pattern(incsarray[0] + "_" + "_" + incsarray[3]
+				+ incsarray[4] + incsarray[5] + "_" + incsarray[7]);
+		mismN3[25].setCS_Pattern(incsarray[0] + "_" + "_" + incsarray[3]
+				+ incsarray[4] + incsarray[5] + incsarray[6] + "_");
+		mismN3[26].setCS_Pattern(incsarray[0] + "_" + incsarray[2] + "_" + "_"
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[27].setCS_Pattern(incsarray[0] + "_" + incsarray[2] + "_"
+				+ incsarray[4] + "_" + incsarray[6] + incsarray[7]);
+		mismN3[28].setCS_Pattern(incsarray[0] + "_" + incsarray[2] + "_"
+				+ incsarray[4] + incsarray[5] + "_" + incsarray[7]);
+		mismN3[29].setCS_Pattern(incsarray[0] + "_" + incsarray[2] + "_"
+				+ incsarray[4] + incsarray[5] + incsarray[6] + "_");
+		mismN3[30].setCS_Pattern(incsarray[0] + "_" + incsarray[2]
+				+ incsarray[3] + "_" + "_" + incsarray[6] + incsarray[7]);
+		mismN3[31].setCS_Pattern(incsarray[0] + "_" + incsarray[2]
+				+ incsarray[3] + "_" + incsarray[5] + "_" + incsarray[7]);
+		mismN3[32].setCS_Pattern(incsarray[0] + "_" + incsarray[2]
+				+ incsarray[3] + "_" + incsarray[5] + incsarray[6] + "_");
+		mismN3[33].setCS_Pattern(incsarray[0] + "_" + incsarray[2]
+				+ incsarray[3] + incsarray[4] + "_" + "_" + incsarray[7]);
+		mismN3[34].setCS_Pattern(incsarray[0] + "_" + incsarray[2]
+				+ incsarray[3] + incsarray[4] + "_" + incsarray[6] + "_");
+		mismN3[35].setCS_Pattern(incsarray[0] + "_" + incsarray[2]
+				+ incsarray[3] + incsarray[4] + incsarray[5] + "_" + "_");
+		mismN3[36].setCS_Pattern(incsarray[0] + incsarray[1] + "_" + "_" + "_"
+				+ incsarray[5] + incsarray[6] + incsarray[7]);
+		mismN3[37].setCS_Pattern(incsarray[0] + incsarray[1] + "_" + "_"
+				+ incsarray[4] + "_" + incsarray[6] + incsarray[7]);
+		mismN3[38].setCS_Pattern(incsarray[0] + incsarray[1] + "_" + "_"
+				+ incsarray[4] + incsarray[5] + "_" + incsarray[7]);
+		mismN3[39].setCS_Pattern(incsarray[0] + incsarray[1] + "_" + "_"
+				+ incsarray[4] + incsarray[5] + incsarray[6] + "_");
+		mismN3[40].setCS_Pattern(incsarray[0] + incsarray[1] + "_"
+				+ incsarray[3] + "_" + "_" + incsarray[6] + incsarray[7]);
+		mismN3[41].setCS_Pattern(incsarray[0] + incsarray[1] + "_"
+				+ incsarray[3] + "_" + incsarray[5] + "_" + incsarray[7]);
+		mismN3[42].setCS_Pattern(incsarray[0] + incsarray[1] + "_"
+				+ incsarray[3] + incsarray[4] + "_" + "_" + incsarray[7]);
+		mismN3[43].setCS_Pattern(incsarray[0] + incsarray[1] + "_"
+				+ incsarray[3] + incsarray[4] + "_" + incsarray[6] + "_");
+		mismN3[44].setCS_Pattern(incsarray[0] + incsarray[1] + "_"
+				+ incsarray[3] + incsarray[4] + incsarray[5] + "_" + "_");
+		mismN3[45].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ "_" + "_" + "_" + incsarray[6] + incsarray[7]);
+		mismN3[46].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ "_" + "_" + incsarray[5] + "_" + incsarray[7]);
+		mismN3[47].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ "_" + "_" + incsarray[5] + incsarray[6] + "_");
+		mismN3[48].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ "_" + incsarray[4] + "_" + "_" + incsarray[7]);
+		mismN3[49].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ "_" + incsarray[4] + "_" + incsarray[6] + "_");
+		mismN3[50].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ "_" + incsarray[4] + incsarray[5] + "_" + "_");
+		mismN3[51].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ incsarray[3] + "_" + "_" + "_" + incsarray[7]);
+		mismN3[52].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ incsarray[3] + "_" + "_" + incsarray[6] + "_");
+		mismN3[53].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ incsarray[3] + "_" + incsarray[5] + "_" + "_");
+		mismN3[54].setCS_Pattern(incsarray[0] + incsarray[1] + incsarray[2]
+				+ incsarray[3] + incsarray[4] + "_" + "_" + "_");
+
+		String prequery = "";
+		String queryCleavagesite = "";
+		// check CS in SQL
+		if (!incs.contains("----")) {
+			for (int j = 0; j < numismN3; j++) {
+				String pattern = mismN3[j].getCS_Pattern();
+				prequery = prequery + " OR CleavageSite_Sequence LIKE '"
+						+ pattern + "'";
+			}
+			prequery = prequery.replaceFirst(" OR", "");
+			queryCleavagesite = "SELECT * FROM CLEAVAGESITE WHERE P_UniprotId = '"
+					+ protease.P_Uniprotid
+					+ "' AND S_Species = 'Human' AND ("
+					+ prequery + ")";
+			Connection connection4 = getConn();
+			Statement s4 = connection4.createStatement();
+			try {
+				ResultSet result4 = s4.executeQuery(queryCleavagesite);
+				int rsSize4 = getResultSetSize(result4);
+				if (rsSize4 != 0) {
+					System.out.println("yes mm");
+					List<Integer> gaps = new ArrayList<Integer>();
+					String[][] entry = new String[3][rsSize4];
+					int k = 0;
+					while (result4.next()) {
+						String cleavageSite_Sequence = result4
+								.getString("CleavageSite_Sequence");
+
+						String found[] = cleavageSite_Sequence.split("");
+
+						// UNCOMMENT
+						// boolean validitysubP4 = getValiditysub(possibleP4,
+						// found[1], incsarray[0]);
+						// boolean validitysubP3 = getValiditysub(possibleP3,
+						// found[2], incsarray[1]);
+						// boolean validitysubP2 = getValiditysub(possibleP2,
+						// found[3], incsarray[2]);
+						// boolean validitysubP1 = getValiditysub(possibleP1,
+						// found[4], incsarray[3]);
+						// boolean validitysubP1p = getValiditysub(possibleP1p,
+						// found[5], incsarray[4]);
+						// boolean validitysubP2p = getValiditysub(possibleP2p,
+						// found[6], incsarray[5]);
+						// boolean validitysubP3p = getValiditysub(possibleP3p,
+						// found[7], incsarray[6]);
+						// boolean validitysubP4p = getValiditysub(possibleP4p,
+						// found[8], incsarray[7]);
+						// boolean validitytotal = (validitysubP4 &&
+						// validitysubP3 && validitysubP2 && validitysubP1 &&
+						// validitysubP1p && validitysubP2p && validitysubP3p &&
+						// validitysubP4p) ? true : false;
+						//
+						// if (!validitytotal) {
+						// confidence = "discarded";
+						// extLink = "-";
+						// return populateEntryEmpty(out, protease,
+						// queryInput, confidence, result,
+						// extLink, substrate, peptide, cs);
+						// }
+						int j = 0;
+						j = getGaps(cleavageSite_Sequence, j);
+						System.out.println("j" + j);
+						gaps.add(j);
+						entry[0][k] = Integer.toString(j);
+						entry[1][k] = result4.getString("External_Link");
+						entry[2][k] = result4.getString("PMID");
+						k++;
+					}
+					Collections.sort(gaps);
+					int min = gaps.get(0);
+					System.out.println(min);
+					if (min == 1) {
+						for (int l = 0; l < rsSize4; l++) {
+							if (entry[0][l].equals(Integer.toString(min))) {
+								extLink = entry[1][l];
+								extLink = extLink.replaceAll("\\[", "");
+								extLink = extLink.replaceAll("\\]", "");
+								extLink = "; " + extLink;
+								pmid = entry[2][l];
+								pmid = pmid.replaceAll("\\[", "");
+								pmid = pmid.replaceAll("\\]", "");
+								pmid = "; " + pmid;
+								return populateEntry(out, protease, queryInput,
+										mm1, result4, extLink, pmid, substrate,
+										peptide, cs);
+							}
+						}
+					} else if (min == 2) {
+						for (int l = 0; l < rsSize4; l++) {
+							System.out.println("rssize" + rsSize4);
+							System.out.println("entry" + entry[0][l]);
+
+							if (entry[0][l].equals(Integer.toString(min))) {
+								extLink = entry[1][l];
+								extLink = extLink.replaceAll("\\[", "");
+								extLink = extLink.replaceAll("\\]", "");
+								extLink = "; " + extLink;
+								pmid = entry[2][l];
+								pmid = pmid.replaceAll("\\[", "");
+								pmid = pmid.replaceAll("\\]", "");
+								pmid = "; " + pmid;
+								return populateEntry(out, protease, queryInput,
+										mm2, result4, extLink, pmid, substrate,
+										peptide, cs);
+							}
+						}
+					} else if (min == 3) {
+						for (int l = 0; l < rsSize4; l++) {
+							if (entry[0][l].equals(Integer.toString(min))) {
+								extLink = entry[1][l];
+								extLink = extLink.replaceAll("\\[", "");
+								extLink = extLink.replaceAll("\\]", "");
+								extLink = "; " + extLink;
+								pmid = entry[2][l];
+								pmid = pmid.replaceAll("\\[", "");
+								pmid = pmid.replaceAll("\\]", "");
+								pmid = "; " + pmid;
+								return populateEntry(out, protease, queryInput,
+										mm3, result4, extLink, pmid, substrate,
+										peptide, cs);
+							}
+						}
+					}
+				} else {
+					confidence = "discarded";
+					extLink = "-";
+					return populateEntryEmpty(out, protease, queryInput,
+							confidence, result, extLink, substrate, peptide, cs);
+				}
+				result4.close();
+				s4.close();
+				connection4.close();
+			} catch (Throwable ignore) {
+				System.err.println("Mysql Statement Error: "
+						+ queryCleavagesite);
+				ignore.printStackTrace();
+			}
+		} else {
+			confidence = "discarded";
+			extLink = "-";
+			return populateEntryEmpty(out, protease, queryInput, confidence,
+					result, extLink, substrate, peptide, cs);
+		}
+		return out;
+	}
+
+	private int getGaps(String cleavageSite_Sequence, int j)
+			throws SQLException {
+		String foundsplit[] = cleavageSite_Sequence.split("");
+		for (int i = 0; i < 8; i++) {
+			if (!incsarray[i].equals(foundsplit[i + 1]))
+				j++;
+		}
+		return j;
+	}
+
+	private boolean getValiditysub(String[] possibleP, String found,
+			String queried) {
+		if (found.equals(queried))
+			return true;
+		for (int i = 0; i < possibleP.length; i++) {
+			if (found.equals(possibleP[i]))
+				return true;
+		}
+		return false;
+	}
+
+	private QueryOutput populateEntry(QueryOutput out, ProteaseData protease,
+			QueryInput queryInput, String confidence, ResultSet result2,
+			String extLink, String pmid, SubstrateData substrate,
+			PeptideData peptide, CleavageSiteData cs) throws SQLException {
+		while (result2.next()) {
+			pmid = pmid + "; " + result2.getString("PMID");
+			extLink = extLink + "; " + result2.getString("External_Link");
+		}
+		pmid = pmid.replaceFirst("; ", "");
+		extLink = extLink.replaceFirst("; ", "");
+		cs.CS_Pmid = pmid;
+		cs.CS_Externallink = extLink;
+		out.setPeptide(peptide);
+		out.setSubstrate(substrate);
+		out.setCleavagesite(cs);
+		out.setProtease(protease);
+		out.confidence = confidence;
+		result2.close();
+		return out;
+	}
+
+	private QueryOutput populateEntryMEROPS(QueryOutput out,
+			ProteaseData protease, QueryInput queryInput, String confidence,
+			ResultSet result, String extLink, SubstrateData substrate,
+			PeptideData peptide, CleavageSiteData cs) throws SQLException {
+		extLink = result.getString("Merops_Url");
+		cs.CS_Pmid = "-";
+		cs.CS_Externallink = extLink;
+		out.setPeptide(peptide);
+		out.setSubstrate(substrate);
+		out.setCleavagesite(cs);
+		out.setProtease(protease);
+		out.confidence = confidence;
+		return out;
+	}
+
+	private QueryOutput populateEntryEmpty(QueryOutput out,
+			ProteaseData protease, QueryInput queryInput, String confidence,
+			ResultSet result, String extLink, SubstrateData substrate,
+			PeptideData peptide, CleavageSiteData cs) throws SQLException {
+		cs.CS_Pmid = "-";
+		cs.CS_Externallink = extLink;
+		out.setPeptide(peptide);
+		out.setSubstrate(substrate);
+		out.setCleavagesite(cs);
+		out.setProtease(protease);
+		out.confidence = confidence;
+		return out;
 	}
 
 	private Document checkSubUniprot(String substrateuni) {
@@ -1315,143 +938,52 @@ public class DB_Protease extends DB_Conn {
 
 	}
 
-	private void populateCsPERFECTSql(QueryOutput[] intermediatecapacityarray,
-			SubstrateData substrate, CsJava_1 csJava_1,
-			int i, int j, String substrateUni, int pepStart, int pepEnd,
-			String pepNumber, int gaps, String pepSequence) throws SQLException, Throwable {
-
-		ProteaseData protease = new ProteaseData();
-		CleavageSiteData cleavagesite = new CleavageSiteData();
-		PeptideData peptide = new PeptideData();
-		intermediatecapacityarray[i] = new QueryOutput();
-
-		peptide.Pep_Id = pepNumber;
-		peptide.Pep_sequence = pepSequence;
-		
-
-		cleavagesite.CS_Externallink = csJava_1.CS_ExternalLink;
-		cleavagesite.CS_Pmid = csJava_1.CS_Pmid;
-		cleavagesite.CS_OuputMismatch = csJava_1.CS_mismatch;
-		cleavagesite.CS_InputCS = csJava_1.CS_InSeq;
-		cleavagesite.CS_OutputCS = csJava_1.CS_OutSeq;
-		
-		String[] splitcleavagein = csJava_1.CS_InSeq.split("");
-		
-		String one = splitcleavagein[1];
-		String two = splitcleavagein[2];
-		String three = splitcleavagein[3];
-		String four = splitcleavagein[4];
-		String five = splitcleavagein[5];
-		String six = splitcleavagein[6];
-		String seven = splitcleavagein[7];
-		String eight = splitcleavagein[8];
-	
-		if (csJava_1.getCS_NorC().contains("C")) {
-			cleavagesite.CS_NorCterm = "CTerm";
-			cleavagesite.CS_P1 = pepEnd;
-			cleavagesite.CS_P1prime = pepEnd + 1;
-		} else if (csJava_1.getCS_NorC().contains("N")) {
-			cleavagesite.CS_NorCterm = "NTerm";
-			cleavagesite.CS_P1 = pepStart - 1;
-			cleavagesite.CS_P1prime = pepStart;
-		}
-				
-		String puni = csJava_1.P_UniprotId;
-		protease.P_Uniprotid = puni;
-
-		// CHECK PROTEASE IN SQL
-		String queryProtease = "SELECT * FROM PROTEASE WHERE P_UniprotID = ?";
-		String outputprotease = getProteaseSql(queryProtease, puni);
-		String splitouputprotease[] = outputprotease.split("\n");
-		protease.P_NL_Name = splitouputprotease[0];
-		protease.P_Symbol = splitouputprotease[1];
-		protease.P_Ecnumber = splitouputprotease[2];
-		String necessaryP1 = splitouputprotease[4];
-		String necessaryP2 = splitouputprotease[5];
-		String necessaryP3 = splitouputprotease[6];
-		String necessaryP1prime = splitouputprotease[7];
-		String necessaryP2prime = splitouputprotease[8];
-		String necessaryP3prime = splitouputprotease[9];
-		String excludedP1 = splitouputprotease[10];
-		String excludedP2 = splitouputprotease[11];
-		String excludedP3 = splitouputprotease[12];
-		String excludedP1prime = splitouputprotease[13];
-		String excludedP2prime = splitouputprotease[14];
-		String excludedP3prime = splitouputprotease[15];
-		String[] necesP1array = necessaryP1.split(", ");
-		String[] necesP2array = necessaryP2.split(", ");
-		String[] necesP3array = necessaryP3.split(", ");
-		String[] necesP1primearray = necessaryP1prime.split(", ");
-		String[] necesP2primearray = necessaryP2prime.split(", ");
-		String[] necesP3primearray = necessaryP3prime.split(", ");
-		String[] excludP1array = excludedP1.split(", ");
-		String[] excludP2array = excludedP2.split(", ");
-		String[] excludP3array = excludedP3.split(", ");
-		String[] excludP1primearray = excludedP1prime.split(", ");
-		String[] excludP2primearray = excludedP2prime.split(", ");
-		String[] excludP3primearray = excludedP3prime.split(", ");
-		
-		String necP3 = "";
-		String necP2 = "";
-		String necP1 = "";
-		String necP3prime = "";
-		String necP2prime = "";
-		String necP1prime = "";
-		String exclP3 = "";
-		String exclP2 = "";
-		String exclP1 = "";
-		String exclP3prime = "";
-		String exclP2prime = "";
-		String exclP1prime = "";
-		
-		necP1 = getExpasyNecRestrictions(four, necesP1array, necP1);
-		necP2 = getExpasyNecRestrictions(three, necesP2array, necP2);
-		necP3 = getExpasyNecRestrictions(two, necesP3array, necP3);
-		necP1prime = getExpasyNecRestrictions(five, necesP1primearray, necP1prime);
-		necP2prime = getExpasyNecRestrictions(six, necesP2primearray, necP2prime);
-		necP3prime = getExpasyNecRestrictions(seven, necesP3primearray, necP3prime);
-		exclP1 = getExpasyExclRestrictions(four, excludP1array, exclP1);
-		exclP2 = getExpasyExclRestrictions(three, excludP2array, exclP2);
-		exclP3 = getExpasyExclRestrictions(two, excludP3array, exclP3);
-		exclP1prime = getExpasyExclRestrictions(five, excludP1primearray, exclP1prime);
-		exclP2prime = getExpasyExclRestrictions(six, excludP2primearray, exclP2prime);
-		exclP3prime = getExpasyExclRestrictions(seven, excludP3primearray, exclP3prime);
-			
-		if (necP1.contains("OK") && necP2.contains("OK") && necP3.contains("OK") && necP1prime.contains("OK") && necP2prime.contains("OK") && necP3prime.contains("OK")
-			&& exclP1.contains("OK") && exclP2.contains("OK") && exclP3.contains("OK") && exclP1prime.contains("OK") && exclP2prime.contains("OK") && exclP3prime.contains("OK")) {
-			intermediatecapacityarray[i].setProtease(protease);
-			intermediatecapacityarray[i].setSubstrate(substrate);
-			intermediatecapacityarray[i].setPeptide(peptide);
-			intermediatecapacityarray[i].setCleavagesite(cleavagesite);
-		} else {
-			peptide.Pep_Id = "clocloforever";
-			intermediatecapacityarray[i].setProtease(protease);
-			intermediatecapacityarray[i].setSubstrate(substrate);
-			intermediatecapacityarray[i].setPeptide(peptide);
-			intermediatecapacityarray[i].setCleavagesite(cleavagesite);
-			
-		}
-		
-	}
-
-	private String getExpasyNecRestrictions(String aminoacid, String[] Expasyarray,
-			String Expasyrestriction) {
+	private boolean getExpasyNecRestrictions(String aminoacid,
+			String[] Expasyarray) {
 		for (String string : Expasyarray) {
 			if (string.equals(aminoacid) || string.equals("-")) {
-				Expasyrestriction = Expasyrestriction + "OK";
-			} 
+				return true;
+			}
 		}
-		return Expasyrestriction;
+		return false;
 	}
-	
-	private String getExpasyExclRestrictions(String aminoacid, String[] Expasyarray,
-			String Expasyrestriction) {
+
+	private boolean getExpasyExclRestrictions(String aminoacid,
+			String[] Expasyarray) {
 		for (String string : Expasyarray) {
 			if (!string.equals(aminoacid) || string.equals("-")) {
-				Expasyrestriction = Expasyrestriction + "OK";
-			} 
+				return true;
+			}
 		}
-		return Expasyrestriction;
+		return false;
+	}
+
+	private String retrieveCCs(int end, String fullsequence) {
+		String cTerm = null;
+		// Retrieve C-term CS
+		if (!(end + 4 > fullsequence.length())) {
+			cTerm = fullsequence.substring(end - 4, end + 4);
+		} else if (end + 4 > fullsequence.length()) {
+			cTerm = fullsequence.substring(end - 4, fullsequence.length());
+			for (int i = fullsequence.length(); i < end + 4; i++) {
+				cTerm = cTerm + "-";
+			}
+		}
+		return cTerm;
+	}
+
+	private String retrieveNCs(int start, String fullsequence) {
+		String nTerm = null;
+		// Retrieve N-term CS
+		if (!(start - 5 < 0)) {
+			nTerm = fullsequence.substring(start - 5, start + 3);
+		} else if (start - 5 < 0) {
+			nTerm = fullsequence.substring(0, start + 3);
+			for (int i = start - 5; i < 0; i++) {
+				nTerm = "-" + nTerm;
+			}
+		}
+		return nTerm;
 	}
 
 }

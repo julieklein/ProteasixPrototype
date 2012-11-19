@@ -1,11 +1,11 @@
 package com.google.gwt.proteasixprototype.server;
 
-import com.google.gwt.proteasixprototype.client.QueryOutput;
 import com.google.gwt.proteasixprototype.client.DBConnection;
 import com.google.gwt.proteasixprototype.client.ProteaseData;
 import com.google.gwt.proteasixprototype.client.PrototypeEntryPoint;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.gwt.proteasixprototype.client.QueryInput;
+import com.google.gwt.proteasixprototype.client.QueryOutput;
 /**
  * server side class for Async calls
  * 

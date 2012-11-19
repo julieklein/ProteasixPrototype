@@ -1,76 +1,55 @@
 package com.google.gwt.proteasixprototype.client;
+
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 
-public class QueryInput implements IsSerializable{
-
-	
-public String peptideInId;
-public String peptideInUniprot;
-public int peptideInStart;
-public int peptideInEnd;
-public int peptideInMism;
+public class QueryInput implements IsSerializable {
 
 
-
-public String getPeptideInId() {
-	return peptideInId;
-}
-
-
-
-public void setPeptideInId(String peptideInId) {
-	this.peptideInId = peptideInId;
-}
+	public ProteaseData protease;
+	public PeptideData peptide;
+	public SubstrateData substrate;
+	public CleavageSiteData cleavagesite;
 
 
-
-public String getPeptideInUniprot() {
-	return peptideInUniprot;
-}
-
+public ProteaseData getProtease() {
+		return protease;
+	}
 
 
-public void setPeptideInUniprot(String peptideInUniprot) {
-	this.peptideInUniprot = peptideInUniprot;
-}
+	public void setProtease(ProteaseData protease) {
+		this.protease = protease;
+	}
 
 
-
-public int getPeptideInStart() {
-	return peptideInStart;
-}
-
+	public PeptideData getPeptide() {
+		return peptide;
+	}
 
 
-public void setPeptideInStart(int peptideInStart) {
-	this.peptideInStart = peptideInStart;
-}
+	public void setPeptide(PeptideData peptide) {
+		this.peptide = peptide;
+	}
 
 
-
-public int getPeptideInEnd() {
-	return peptideInEnd;
-}
-
+	public SubstrateData getSubstrate() {
+		return substrate;
+	}
 
 
-public void setPeptideInEnd(int peptideInEnd) {
-	this.peptideInEnd = peptideInEnd;
-}
+	public void setSubstrate(SubstrateData substrate) {
+		this.substrate = substrate;
+	}
 
 
-
-public int getPeptideInMism() {
-	return peptideInMism;
-}
-
+	public CleavageSiteData getCleavagesite() {
+		return cleavagesite;
+	}
 
 
-public void setPeptideInMism(int peptideInMism) {
-	this.peptideInMism = peptideInMism;
-}
-
+	public void setCleavagesite(CleavageSiteData cleavagesite) {
+		this.cleavagesite = cleavagesite;
+	}
 
 
 public QueryInput() {

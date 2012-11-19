@@ -1,45 +1,43 @@
 /** Add css rules here for your application. */
-
-
 /** Example rules used by the template application (remove for your app) */
 h1 {
-	color: #777777;
+	color: #fbfefd  !important;
 	margin: 40px 0px 70px;
 	font-size: 2em;
-	font-weight: bold;
+/* 	font-weight: bold; */
 	text-align: center;
 }
 
 body {
-  background:white;
-    color: #7F7F7F;
-    font-family: Arial Unicode MS, Arial, sans-serif;
-    font-size: small;
-    line-height: 1.7em;
-    background: url(images/up-left-corner.png) no-repeat top left,
-    url(images/bottom-left-corner.png) no-repeat bottom left,
-    url(images/up-right-corner.png) no-repeat top right;
-    background: url(images/up-left-corner.png)\0/;
+	background: #fbfefd  !important;
+	color: #7F7F7F;
+	font-family: Arial Unicode MS, Arial, sans-serif;
+	font-size: small;
+	line-height: 1.7em;
+	
+}
 
+body,table td,select {
+	font-family: Arial Unicode MS, Arial, sans-serif;
+	font-size: small;
 }
-body, table td, select {
-  font-family: Arial Unicode MS, Arial, sans-serif;
-  font-size: small;
-}
+
 pre {
-  font-family: "courier new", courier;
-  font-size: small;
+	font-family: "courier new", courier;
+	font-size: small;
 }
+
 body {
-  color: black;
-  margin: 0px;
-  border: 0px;
-  padding: 0px;
-  background: #fff;
-  direction: ltr;
+	color: black;
+	margin: 0px;
+	border: 0px;
+	padding: 0px;
+	background: #fff;
+	direction: ltr;
 }
-a, a:visited, a:hover {
-  color: #0000AA;
+
+a,a:visited,a:hover {
+	color: #0000AA;
 }
 
 /**
@@ -48,127 +46,105 @@ a, a:visited, a:hover {
  * name below, and attach it to the DOM.  Use a timer to detect when the
  * element's height and width are set to 5px.
  */
- 
- .mainPanel{
- padding: 10px;
- }
+.mainPanel {
+	padding: 10px;
+	background: white;
+}
+
 .gwt-Reference-standard {
-  height: 5px;
-  width: 5px;
-  zoom: 1;
+	height: 5px;
+	width: 5px;
+	zoom: 1;
 }
 
 .gwt-Button {
-  margin: 0;
-  padding: 3px 5px;
-  text-decoration: none;
-  font-size: small;
-  cursor: pointer;
-  cursor: hand;
-  background: url("images/hborder.png") repeat-x 0px -27px;
-  border: 1px outset #ccc;
+	margin: 0;
+	padding: 3px 5px;
+	text-decoration: none;
+	font-size: small;
+	cursor: pointer;
+	cursor: hand;
+	background: url("images/hborder.png") repeat-x 0px -27px;
+	border: 1px outset #ccc;
+	-webkit-border-radius: 3px !important;
+	-moz-border-radius: 3px !important;
+	-ms-border-radius: 3px !important;
+	-o-border-radius: 3px !important;
+	border-radius: 3px !important;
 }
+
 .gwt-Button:active {
-  border: 1px inset #ccc;
+	border: 1px inset #ccc;
 }
+
 .gwt-Button:hover {
-  border-color: #9cf #69e #69e #7af;
+	border-color: #9cf #69e #69e #7af;
 }
+
 .gwt-Button[disabled] {
-  cursor: default;
-  color: #888;
+	cursor: default;
+	color: #888;
 }
+
 .gwt-Button[disabled]:hover {
-  border: 1px outset #ccc;
+	border: 1px outset #ccc;
 }
 
 .gwt-CheckBox {
+	
 }
+
 .gwt-CheckBox-disabled {
-  color: #888;
+	color: #888;
 }
 
-
-
-
-.pSearchpanel{
-margin: 5px 5px 10px 5px;	
+.pSearchpanel {
+	margin: 5px 5px 10px 5px;
+	background: white;
+	
 }
 
-
-.rs-even{
+.rs-even {
 	background: #ffffff;
+}
+
+.rs-odd {
+	background: #f3f7fb;
+}
+
+.pResultPanel {
+	margin: 10px 10px 15px 10px;
+	background: white;
 	
 }
 
-.rs-odd{
-	background:#f3f7fb;
-	
-	}
-
-.pResultPanel{
-margin: 10px 10px 15px 10px;
+.Label {
+	font-size: 16px;
+	margin-top: 10px;
+	color: #4A4A4A;
 }
 
-.Label{
-font-size:16px;
-margin-top:10px;
-color:#4A4A4A;
+
+.lSubstrateOutput {
+	font-size: 18px;
+	font-weight: bold;
+	text-align: center;
+	margin-botton: 10px;
+	color: #737373;
 }
 
-.dStackPanel{
-margin: 10px 10px 15px 10px;	
-}
-
-.lSubstrateOutput{
-font-size:18px;
-font-weight: bold;
-text-align: center;
-margin-botton:10px;
-
-color:#737373;
-}
-
-.lError{
-font-size:16px;
-text-align: center;
-
-margin-top:10px;
-color:#4A4A4A;
-
-}
-
-/* stock list header row */
-
-
-.gwt-DisclosurePanel-mydp {
-	margin-top:10px !important;
-	
-}
-.gwt-DisclosurePanel-open-mydp {
-}
-.gwt-DisclosurePanel-closed-mydp {
-}
-.gwt-DisclosurePanel-mydp .header,
-.gwt-DisclosurePanel-mydp .header a,
-.gwt-DisclosurePanel-mydp .header td {
-  text-decoration: none;  /* Remove underline from header */
-  color: #678b73 !important;
-  font-size: 14px !important;
-  cursor: pointer;
-  cursor: hand;
-}
-.gwt-DisclosurePanel-mydp .content {
- border-left: none !important;
-  padding: 4px 0px 4px 8px;
-  margin-left: 6px;
+.lError {
+	font-size: 16px;
+	text-align: center;
+	margin-top: 10px;
+	color: #4A4A4A;
 }
 
 
 
-.lResult{
-	margin-top:10px;
-	margin-bottom:20px;
+.lResult {
+	margin-top: 10px;
+	margin-bottom: 20px;
 	margin-left: 10px !important;
 	color: #737373;
 	font-size: 18px;
@@ -176,195 +152,316 @@ color:#4A4A4A;
 }
 
 
+.gwt-DecoratedTabBar {
+	background: #ddf8f2  !important;
+	padding-top: 6px;
+	 -webkit-border-top-left-radius: 10px !important;
+	-moz-border-radius-topleft: 10px !important;
+	-ms-border-radius-topleft: 10px !important;
+	-o-border-radius-topleft: 10px !important;
+	border-top-left-radius: 10px !important; 
+	 -webkit-border-top-right-radius: 10px !important;
+	-moz-border-radius-topright: 10px !important;
+	-ms-border-radius-topright: 10px !important;
+	-o-border-radius-topright: 10px !important;
+	border-top-right-radius: 10px !important; 
+}
 
-.
+.gwt-DecoratedTabBar .gwt-TabBarFirst {
+	width: 5px; /* first tab distance from the left */
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarRest {
+	
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarItem {
+	border-collapse: collapse;
+	margin-left: 4px;
+}
+
+.gwt-DecoratedTabBar .tabTopCenter {
+	padding: 0px;
+	background: #8E8E8E !important;
+}
+
+.gwt-DecoratedTabBar .tabTopLeft,.gwt-DecoratedTabBar .tabTopRight {
+	padding: 0px;
+	zoom: 1;
+}
+
+.gwt-DecoratedTabBar .tabTopLeftInner,.gwt-DecoratedTabBar .tabTopRightInner
+	{
+	width: 3px;
+	height: 3px;
+}
+
+.gwt-DecoratedTabBar .tabTopLeft {
+	-webkit-border-top-left-radius: 7px !important;
+	-moz-border-radius-topleft: 7px !important;
+	-ms-border-radius-topleft: 7px !important;
+	-o-border-radius-topleft: 7px !important;
+	border-top-left-radius: 7px !important;
+	background: #8E8E8E !important;
+}
+
+.gwt-DecoratedTabBar .tabTopRight {
+	-webkit-border-top-right-radius: 7px !important;
+	-moz-border-radius-topright: 7px !important;
+	-ms-border-radius-topright: 7px !important;
+	-o-border-radius-topright: 7px !important;
+	border-top-right-radius: 7px !important;
+	background: #8E8E8E !important;
+}
+
+.gwt-DecoratedTabBar .tabMiddleLeft,.gwt-DecoratedTabBar .tabMiddleRight
+	{
+	width: 3px;
+	padding: 0px;
+	background: #8E8E8E !important;
+}
+
+.gwt-DecoratedTabBar .tabMiddleLeftInner,.gwt-DecoratedTabBar .tabMiddleRightInner
+	{
+	width: 1px;
+	height: 1px;
+}
+
+.gwt-DecoratedTabBar .tabMiddleCenter {
+	padding: 0px 5px 4px 5px;
+	cursor: pointer;
+	cursor: hand;
+	color: #fff !important;
+	font-weight: normal;
+	text-align: center;
+	background: #8E8E8E !important;
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopCenter {
+	background: #fff !important;
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopLeft {
+	-webkit-border-top-left-radius: 7px !important;
+	-moz-border-radius-topleft: 7px !important;
+	-ms-border-radius-topleft: 7px !important;
+	-o-border-radius-topleft: 7px !important;
+	border-top-left-radius: 7px !important;
+	background: #fff !important;
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopRight {
+	-webkit-border-top-right-radius: 7px !important;
+	-moz-border-radius-topright: 7px !important;
+	-ms-border-radius-topright: 7px !important;
+	-o-border-radius-topright: 7px !important;
+	border-top-right-radius: 7px !important;
+	background: #fff !important;
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleLeft,.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleRight
+	{
+	background: #fff !important;
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleCenter {
+	cursor: default;
+	background: #fff !important;
+	color: #333 !important;
+	font-weight: bold;
+}
+
+.gwt-DecoratedTabBar .gwt-TabBarItem-disabled .tabMiddleCenter {
+	cursor: default;
+	color: #999999 !important;
+}
+
+html>body .gwt-DecoratedTabBar {	
+}
+
+* html .gwt-DecoratedTabBar .tabTopLeftInner,* html .gwt-DecoratedTabBar .tabTopRightInner
+	{
+	width: 3px;
+	height: 3px;
+	overflow: hidden;
+}
+
 .gwt-TabPanel {
-    margin-top: 4px;
-    margin-left: 20px !important;
-    padding: 6px;
-    width: 10000px;
+		background: white !important;
+			padding-left: 20px !important;
+		
+	
 }
 
 .gwt-TabPanelBottom {
-    border-color: #b3b3b3 !important;
-    border-style: solid;
-    
-    border-width: 2px 1px 1px !important;
-
-    -moz-border-radius: 10px 10px 10px 10px;
-    -webkit-border-radius: 10px 10px 10px 10px;
-    padding:5px;
-
-    overflow: hidden;
-    padding: 6px;
-    background-color: white;
-}
-
-.gwt-TabBar {
-    padding-top: 2px;
-}
-
-.gwt-TabBarItem {
-    -moz-border-radius: 10px 10px 0px 0px !important ;
-    -webkit-border-radius: 10px 10px 0px 0px !important ;
-    padding: 5px;
-    background-color: #ebebeb !important ;
-    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #999999),color-stop(1, #ffffff)) !important ;
-}
-
-.gwt-TabBarItem-selected {
-    padding: 4px;
-    font-weight: bold;
-    cursor: default;
-    background-color: #b3b3b3 !important;
-    margin-right: 2px;
-}
-.gwt-DecoratedTabBar {
-
-}
-.gwt-DecoratedTabBar .gwt-TabBarFirst {
-  width: 5px;  /* first tab distance from the left */
-}
-.gwt-DecoratedTabBar .gwt-TabBarRest {
-}
-.gwt-DecoratedTabBar .gwt-TabBarItem {
-  border-collapse: collapse !important ;
-  margin-left: 6px;
-}
-.gwt-DecoratedTabBar .tabTopCenter {
-  padding: 0px;
-  background: #999999;
-}
-.gwt-DecoratedTabBar .tabTopLeft,
-.gwt-DecoratedTabBar .tabTopRight {
-  padding: 0px;
-  zoom: 1;
-}
-.gwt-DecoratedTabBar .tabTopLeftInner,
-.gwt-DecoratedTabBar .tabTopRightInner {
-  width: 6px;
-  height: 6px;
-}
-.gwt-DecoratedTabBar .tabTopLeft {
-  background: url(images/corner.png) no-repeat 0px -55px;
-  -background: url(images/corner_ie6.png) no-repeat 0px -55px;
-}
-.gwt-DecoratedTabBar .tabTopRight {
-  background: url(images/corner.png) no-repeat -6px -55px;
-  -background: url(images/corner_ie6.png) no-repeat -6px -55px;
-}
-* html .gwt-DecoratedTabBar .tabTopLeftInner,
-* html .gwt-DecoratedTabBar .tabTopRightInner {
-  width: 6px;
-  height: 6px;
-  overflow: hidden;
-}
-.gwt-DecoratedTabBar .tabMiddleLeft,
-.gwt-DecoratedTabBar .tabMiddleRight {
-  width: 6px;
-  padding: 0px;
-  background: #999999;
-}
-.gwt-DecoratedTabBar .tabMiddleLeftInner,
-.gwt-DecoratedTabBar .tabMiddleRightInner {
-  width: 1px;
-  height: 1px;
-}
-.gwt-DecoratedTabBar .tabMiddleCenter {
-  padding: 0px 4px 2px 4px;
-  cursor: pointer;
-  cursor: hand;
-  color: black;
-  font-weight: bold;
-  text-align: center;
-  background: #999999;
-}
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopCenter {
-  background: #999999;
-}
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopLeft {
-  background-position: 0px -61px;
-}
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabTopRight {
-  background-position: -6px -61px;
-}
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleLeft,
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleRight {
-  background: #999999;
-}
-.gwt-DecoratedTabBar .gwt-TabBarItem-selected .tabMiddleCenter {
-  cursor: default;
-  background: #999999 ;
-}
-.gwt-DecoratedTabBar .gwt-TabBarItem-disabled .tabMiddleCenter {
-  cursor: default;
-  color: #999999;
+	border-color: #ccc !important;
+	border-style: solid;
+	border-width: 0px 1px 1px;
+		 -webkit-border-bottom-left-radius: 20px !important;
+	-moz-border-radius-bottomleft: 20px !important;
+	-ms-border-radius-bottomleft: 20px !important;
+	-o-border-radius-bottomleft: 20px !important;
+	border-bottom-left-radius: 20px !important; 
+	 -webkit-border-bottom-right-radius: 20px !important;
+	-moz-border-radius-bottomright: 20px !important;
+	-ms-border-radius-bottomright: 20px !important;
+	-o-border-radius-bottomright: 20px !important;
+	border-bottom-right-radius: 20px !important; 
+	overflow: hidden;
+	padding: 6px;
+	background: white !important;	
+	
 }
 
 .cleavagesiteTableMedium {
-  text-align: center;
-  width:5em;
+	text-align: center;
+	width: 5em;
 }
+
 .cleavagesiteTableSmall {
-  text-align: center;
-  width:2em;
+	text-align: center;
+	width: 2em;
 }
 
 .proteaseData {
-  text-align: center;
-  width:11em;
+	text-align: center;
+	width: 11em;
 }
 
-.gwt-button-search{
-	    background-color: #eeeeee;
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #eeeeee), color-stop(100%, #cccccc));
-	    background-image: -webkit-linear-gradient(top, #eeeeee, #cccccc);
-    background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
-	    background-image: -ms-linear-gradient(top, #eeeeee, #cccccc);
-    background-image: -o-linear-gradient(top, #eeeeee, #cccccc);
-	    background-image: linear-gradient(top, #eeeeee, #cccccc);
-	    border: 1px solid #ccc;
-    border-bottom: 1px solid #bbb;
-    	    -webkit-border-radius: 3px;
-	    -moz-border-radius: 3px;
-	    	    -ms-border-radius: 3px;
-	    -o-border-radius: 3px;
-    border-radius: 3px;
-    color: #333;
-    font: bold 11px "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
-	    line-height: 1.3;
-	    padding: 0px 0;
-	    text-align: center;
-	    text-shadow: 0 1px 0 #eee;
-	    width: 80px;
-	    
-	    margin:10px 10px 10px 10px !important;
-	    
-   }
 
-
-
-.sendButton {
-  display: block;
-  font-size: 16pt;
+.gwt-PopupPanel {
+	border: 3px solid #616A7F !important;
+	padding: 3px;
+	background: white;
 }
 
-/** Most GWT widgets already have a style name defined */
-.gwt-DialogBox {
-  width: 400px;
+.gwt-PopupPanelGlass {
+	background-color: #000;
+	opacity: 0.3;
+	filter: alpha(opacity =   30);
 }
 
-.dialogVPanel {
-  margin: 5px;
+html>body .gwt-PopupPanel {
+	
 }
 
-.serverResponseLabelError {
-  color: red;
+* html .gwt-PopupPanel {
+	
 }
 
-/** Set ids using widget.getElement().setId("idOfElement") */
-#closeButton {
-  margin: 15px 6px 6px;
+.gwt-DecoratedPopupPanel .popupContent {
+	
 }
 
-  
+.gwt-DecoratedPopupPanel .popupMiddleCenter {
+	padding: 3px;
+	background: white !important;
+}
+
+.gwt-DecoratedPopupPanel .popupTopCenter {
+	background: #ccc !important;
+
+}
+
+.gwt-DecoratedPopupPanel .popupBottomCenter {
+	background: #ccc !important;
+
+}
+
+.gwt-DecoratedPopupPanel .popupMiddleLeft {
+	background: #ccc !important;
+
+}
+
+.gwt-DecoratedPopupPanel .popupMiddleRight {
+	background: #ccc !important;
+
+}
+
+.gwt-DecoratedPopupPanel .popupTopLeftInner {
+	width: 5px;
+	height: 5px;
+	zoom: 1;
+}
+
+.gwt-DecoratedPopupPanel .popupTopRightInner {
+	width: 5px;
+	height: 5px;
+	zoom: 1;
+}
+
+.gwt-DecoratedPopupPanel .popupBottomLeftInner {
+	width: 5px;
+	height: 5px;
+	zoom: 1;
+}
+
+.gwt-DecoratedPopupPanel .popupBottomRightInner {
+	width: 5px;
+	height: 5px;
+	zoom: 1;
+}
+
+.gwt-DecoratedPopupPanel .popupTopLeft {
+	-webkit-border-top-left-radius: 10px !important;
+	-moz-border-radius-topleft: 10px !important;
+	-ms-border-radius-topleft: 10px !important;
+	-o-border-radius-topleft: 10px !important;
+	border-top-left-radius: 10px !important;
+	background: #ccc !important;
+}
+
+.gwt-DecoratedPopupPanel .popupTopRight {
+	-webkit-border-top-right-radius: 10px !important;
+	-moz-border-radius-topright: 10px !important;
+	-ms-border-radius-topright: 10px !important;
+	-o-border-radius-topright: 10px !important;
+	border-top-right-radius: 10px !important;
+	background: #ccc !important;
+}
+
+.gwt-DecoratedPopupPanel .popupBottomLeft {
+	-webkit-border-bottom-left-radius: 10px !important;
+	-moz-border-radius-bottomleft: 10px !important;
+	-ms-border-radius-bottomleft: 10px !important;
+	-o-border-radius-bottomleft: 10px !important;
+	border-bottom-left-radius: 10px !important;
+	background: #ccc !important;
+}
+
+.gwt-DecoratedPopupPanel .popupBottomRight {
+-webkit-border-bottom-right-radius: 10px !important;
+	-moz-border-radius-bottomright: 10px !important;
+	-ms-border-radius-bottomright: 10px !important;
+	-o-border-radius-bottomright: 10px !important;
+	border-bottom-right-radius: 10px !important;
+	background: #ccc !important;
+}
+
+html>body .gwt-DecoratedPopupPanel {
+	
+}
+
+* html .gwt-DecoratedPopupPanel .popupTopLeftInner {
+	width: 5px;
+	height: 5px;
+	overflow: hidden;
+}
+
+* html .gwt-DecoratedPopupPanel .popupTopRightInner {
+	width: 5px;
+	height: 5px;
+	overflow: hidden;
+}
+
+* html .gwt-DecoratedPopupPanel .popupBottomLeftInner {
+	width: 5px;
+	height: 5px;
+	overflow: hidden;
+}
+
+* html .gwt-DecoratedPopupPanel .popupBottomRightInner {
+	width: 5px;
+	height: 5px;
+	overflow: hidden;
+}

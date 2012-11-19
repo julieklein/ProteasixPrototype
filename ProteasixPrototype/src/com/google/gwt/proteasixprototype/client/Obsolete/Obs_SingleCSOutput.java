@@ -1,14 +1,14 @@
-package com.google.gwt.proteasixprototype.client;
+package com.google.gwt.proteasixprototype.client.Obsolete;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
-public class SingleCSOutput {
+public class Obs_SingleCSOutput {
  public int gap;
  public String cs;
  
 public int getGap() {
 	return gap;
 }
-public SingleCSOutput() {
+public Obs_SingleCSOutput() {
 	
 	// TODO Auto-generated constructor stub
 }

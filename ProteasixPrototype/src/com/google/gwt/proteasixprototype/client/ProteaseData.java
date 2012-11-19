@@ -19,6 +19,15 @@ public class ProteaseData implements IsSerializable{
 	public String P_Symbol;
 	public String P_Uniprotid;
 	public String P_Ecnumber;
+	public String P_OMIM;
+	
+	public int totalSPSL;
+	public int totalSS;
+	public int totalHP;
+	public int totalP;
+	public int total1mm;
+	public int total2mm;
+	public int total3mm;
 	
 	
 	/**

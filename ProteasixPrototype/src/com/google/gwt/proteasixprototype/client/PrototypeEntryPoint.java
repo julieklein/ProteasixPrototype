@@ -42,6 +42,12 @@ import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.OpenEvent;
 import com.google.gwt.event.logical.shared.OpenHandler;
 import com.google.gwt.i18n.client.NumberFormat;
+import com.google.gwt.proteasixprototype.client.CleavageSiteData;
+import com.google.gwt.proteasixprototype.client.DBConnection;
+import com.google.gwt.proteasixprototype.client.DBConnectionAsync;
+import com.google.gwt.proteasixprototype.client.PeptideData;
+import com.google.gwt.proteasixprototype.client.ProteaseData;
+import com.google.gwt.proteasixprototype.client.SubstrateData;
 import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -79,6 +85,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.view.client.ListDataProvider;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.source.tree.NewClassTree;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.QEncoderStream;
 
 public class PrototypeEntryPoint implements EntryPoint {
 
@@ -86,62 +93,84 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private DBConnectionAsync callProvider;
 	// main widget panel
 
-	private VerticalPanel mainTabPanel = new VerticalPanel();
+	private String SPSL = "SPSL";
+	private String SS = "SS";
+	private String HP = "HP";
+	private String P = "P";
+	private String mm1 = "1mm";
+	private String mm2 = "2mm";
+	private String mm3 = "3mm";
+
+	private DecoratedTabPanel mainTabPanel = new DecoratedTabPanel();
+	private FlowPanel searchTabPanel = new FlowPanel();
+	private FlowPanel aboutTabPanel = new FlowPanel();
+	
 	private HorizontalPanel searchPanelHor = new HorizontalPanel();
 	private VerticalPanel resultPanel = new VerticalPanel();
-	private TabPanel resultTabPanel = new TabPanel();
-	
-	private FlowPanel summary = new FlowPanel();
-	private FlowPanel allresult = new FlowPanel();
-	
-	private VerticalPanel gross = new VerticalPanel();
-	
+	private DecoratedTabPanel resultTabPanel = new DecoratedTabPanel();
+
+	private FlowPanel Proteaseresult = new FlowPanel();
+	private FlowPanel CSresult = new FlowPanel();
+
+	private HorizontalPanel gross = new HorizontalPanel();
+	private VerticalPanel gross1 = new VerticalPanel();
+	private VerticalPanel gross2 = new VerticalPanel();
+
 	private Label result = new Label("     Result View");
-	
+
 	private VerticalPanel searchPepIdPanel = new VerticalPanel();
 	private TextArea pepIdArea = new TextArea();
-	
+
 	private VerticalPanel searchPepUniPanel = new VerticalPanel();
 	private TextArea pepUniArea = new TextArea();
-	
+
 	private VerticalPanel searchPepStartEndPanel = new VerticalPanel();
 	private TextArea pepStartEndArea = new TextArea();
-	
-	private VerticalPanel mismPanel = new VerticalPanel();
-	private ListBox mismList = new ListBox();
-	
+
 	private VerticalPanel buttonPanel = new VerticalPanel();
-	private Button exampleButton = new Button("Example");
+	private CheckBox boxNTerm = new CheckBox("Only N-term CS");
+	private Button exampleButton = new Button("Try the example!");
 	private Button deleteButton = new Button("Delete");
 	private Button searchButton = new Button("Search");
-	
-	private VerticalPanel explanations = new VerticalPanel();
-	
+
+	private VerticalPanel about = new VerticalPanel();
+	private VerticalPanel explanation = new VerticalPanel();
+
 	private VerticalPanel bottompage = new VerticalPanel();
-	
-	
+
 	// private Label loading = new Label("loading please wait...");
 	private Image loading = new Image();
 	private Label lbl = new Label("Please wait...");
-	private PopupPanel popup = new PopupPanel();
+	private DecoratedPopupPanel popup = new DecoratedPopupPanel();
 	private VerticalPanel ploading = new VerticalPanel();
 	private Label lResult = new Label("Result View");
 
-	private PopupPanel popuptoomuch = new PopupPanel();
+	private DecoratedPopupPanel popuptoomuch = new DecoratedPopupPanel();
 	private VerticalPanel ptoomuch = new VerticalPanel();
-	private Label lbltoomuch = new Label("Oups sorry, the search is limitated to 100 peptides!");
+	private Label lbltoomuch = new Label(
+			"Oups sorry, the search is limitated to 100 peptides!");
 	private Button closeButton = new Button("Close");
 	
+
+	private DecoratedPopupPanel popupseqvalidity = new DecoratedPopupPanel();
+	private VerticalPanel pseqvalidity = new VerticalPanel();	
+	
 	// new css for CSTABLE
-		interface PTableResources extends CellTable.Resources {
+	interface PTableResources extends CellTable.Resources {
+		@Source({ CellTable.Style.DEFAULT_CSS, "ProteaseTable.css" })
+		PTableStyle cellTableStyle();
+	}
+
+	// new css for CSTABLE
+		interface CSTableResources extends CellTable.Resources {
 			@Source({ CellTable.Style.DEFAULT_CSS, "CleavageSiteTable.css" })
-			PTableStyle cellTableStyle();
+			CSTableStyle cellTableStyle();
 		}
 
-		interface PTableStyle extends CellTable.Style {
-		}
-
-
+	interface PTableStyle extends CellTable.Style {
+	}
+	interface CSTableStyle extends CellTable.Style {
+	}
 
 	/**
 	 * This is the entry point method.
@@ -165,11 +194,9 @@ public class PrototypeEntryPoint implements EntryPoint {
 			}
 		});
 
-		
-		
-//		// Point the image at a real URL.
+		// // Point the image at a real URL.
 		ploading.setHeight("400px");
-		ploading.setWidth("80%"); 
+		ploading.setWidth("500px");
 		ploading.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		ploading.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 		ploading.add(new HTML("<div><br /><br /><div>"));
@@ -178,11 +205,11 @@ public class PrototypeEntryPoint implements EntryPoint {
 		ploading.add(lbl);
 		lbl.addStyleName("lResult");
 		popup.add(ploading);
-		popup.setSize("400px", "400px");
+		popup.setSize("400px", "500px");
 		popup.hide();
-		
+
 		ptoomuch.setHeight("400px");
-		ptoomuch.setWidth("80%"); 
+		ptoomuch.setWidth("80%");
 		ptoomuch.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		ptoomuch.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 		lbltoomuch.addStyleName("lResult");
@@ -191,79 +218,99 @@ public class PrototypeEntryPoint implements EntryPoint {
 		popuptoomuch.add(ptoomuch);
 		popuptoomuch.setSize("400px", "400px");
 		popuptoomuch.hide();
-//
-
+		//
 		
+		pseqvalidity.setHeight("400px");
+		pseqvalidity.setWidth("80%");
+		pseqvalidity.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+		pseqvalidity.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+		popupseqvalidity.setSize("400px", "400px");
+		popupseqvalidity.hide();
+
 		// Set Up the PEPTIDESEARCH Widget
 		searchPepIdPanel.add(new HTML(
-				"<div align=\"center\">Peptide ID<br />(optionnal)</div>"));
+				"<div align=\"center\">Peptide ID<br />(optional)</div>"));
 		searchPepIdPanel.add(pepIdArea);
 		searchPepIdPanel.addStyleName("pSearchpanel");
 		pepIdArea.setHeight("200px");
-		pepIdArea.setWidth("200px");
+		pepIdArea.setWidth("70px");
 
-		searchPepUniPanel.add(new HTML(
-				"<div align=\"center\">Substrate<br />UniprotID or UniprotName</div>"));
+		searchPepUniPanel
+				.add(new HTML(
+						"<div align=\"center\">Substrate<br />Uniprot ID or Name</div>"));
 		searchPepUniPanel.add(pepUniArea);
 		searchPepUniPanel.addStyleName("pSearchpanel");
 		pepUniArea.setHeight("200px");
-		pepUniArea.setWidth("200px");
+		pepUniArea.setWidth("150px");
 
 		searchPepStartEndPanel.add(new HTML(
-				"<div align=\"center\">Peptide<br />Start-End</div>"));
+				"<div align=\"center\">Peptide<br />Start-End or Sequence</div>"));
 		searchPepStartEndPanel.add(pepStartEndArea);
 		searchPepStartEndPanel.addStyleName("pSearchpanel");
 		pepStartEndArea.setHeight("200px");
-		pepStartEndArea.setWidth("200px");
+		pepStartEndArea.setWidth("410px");
+		buttonPanel.setHeight("200px");
+		buttonPanel.setWidth("150px");
+		buttonPanel.add(new HTML("<div><br /><br /><div>"));
+		buttonPanel.add(boxNTerm);
+		buttonPanel.add(new HTML("<div><br /><div>"));
+		buttonPanel.add(exampleButton);
+		buttonPanel.add(new HTML("<div><br /><div>"));
+		buttonPanel.add(deleteButton);
+		buttonPanel.add(new HTML("<div><br /><div>"));
+		buttonPanel.add(searchButton);
 
-		mismPanel
-				.add(new HTML(
-						"<div align=\"center\">Number of mismatches<br />in cleavage sites</div>"));
-		mismList.addItem("0 mismatch");
-		mismList.addItem("up to 1 mismatch");
-		mismList.addItem("up to 2 mismatches");
-		mismList.addItem("up to 3 mismatches");
-		mismPanel.add(mismList);
-		mismPanel.addStyleName("pSearchpanel");
-		
-		mismPanel.add(new HTML("<div><br /><br /><div>"));
-		mismPanel.add(exampleButton);
-		mismPanel.add(new HTML("<div><br /><div>"));
-		mismPanel.add(deleteButton);
-		mismPanel.add(new HTML("<div><br /><div>"));
-		mismPanel.add(searchButton);
-		
 		searchPanelHor.add(searchPepIdPanel);
 		searchPanelHor.add(searchPepUniPanel);
 		searchPanelHor.add(searchPepStartEndPanel);
-		searchPanelHor.add(mismPanel);
 		searchPanelHor.add(buttonPanel);
-		explanations.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
-		explanations.add(new HTML ("<div><font color=#737373 size=\"2\"><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches (still taking amino-acid restrictions into account).<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
-		searchPanelHor.add(explanations);
+		about
+				.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
+		about
+				.add(new HTML(
+						"<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches (still taking amino-acid restrictions into account).<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
+		aboutTabPanel.add(about);
+		
+		explanation.setHeight("300px");
+//		explanation.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
+		explanation.add(new HTML("<p><font color=#e6cd78 size = 3><b>Search: </b></font><br/>Enter your peptide list or \"Try the example\" and press search.<br/><font color=#e6cd78 size = 3><b>Result: </b></font><br/>Proteasix will return a list of predicted protease/cleavage site (CS) combinations, with different levels of confidence." +
+				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +++: observed on the <i>same substrate</i>, at the <i>same position</i>." +
+				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++: observed on <i>other substrate(s)</i> or <i>other position(s)</i>." +
+				//UNCOMMENT
+//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++++: already been shown on the <i>same substrate</i>, at the <i>same position</i>." +
+//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +++: already been shown on <i>other substrate(s)</i> or <i>other position(s)</i>." +
+//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++: predicted using MEROPS weight matrix with <i>very high probability</i>." +
+//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +: predicted using MEROPS weight matrix with <i>high probability</i>." +
+//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +-: already been shown with <i>one amino acid mismatch</i>, respecting amino acid substitution constraints and protease restrictions." +
+//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +--: already been shown with <i>two amino acid mismatches</i>, respecting amino acid substitution constraints and protease restrictions." +
+//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +---: already been shown with <i>three amino acid mismatches</i>, respecting amino acid substitution constraints and protease restrictions.</p>"));
+		
+				//COMMENT
+				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +: observed with <i>one amino acid mismatch</i>, respecting protease restrictions." +
+				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +-: observed with <i>two amino acid mismatches</i>, respecting protease restrictions." +
+				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +--: observed with <i>three amino acid mismatches</i>, respecting protease restrictions.</p>"));
+		
+		searchPanelHor.add(explanation);
 		searchPanelHor.addStyleName("pSearchpanel");
-
-//		peptideTab_2.add(search_2);
-//
-//		peptideTab_2
-//				.add(new HTML(
-//						"<div><hr style=\"height:8px;;border-width:0;color:#9FB9A8;background-color:#9FB9A8;\"></div>"));
-//		pResultPanel_2.addStyleName("pResultPanel");
-//		peptideTab_2.add(pResultPanel_2);
-//		pResultPanel_2.setWidth("1200px");
 
 		// Set Up the MainPanel
 		mainTabPanel.removeStyleName("gwt-TabPanelBottom");
-		
-		
-		mainTabPanel.add(searchPanelHor);
-		mainTabPanel
-		.add(new HTML(
-				"<div><hr style=\"height:8px;;border-width:0;color:#9FB9A8;background-color:#9FB9A8;\"></div>"));
-		bottompage.add(new HTML(
-				"<div><hr style=\"height:8px;;border-width:0;color:#FFFFFF;background-color:#FFFFFF;\"></div>"));
-		
-		
+	
+
+		searchTabPanel.add(searchPanelHor);
+		searchTabPanel
+				.add(new HTML(
+						"<div><hr style=\"height:10px;;border-width:0;color:#ccc;background-color:#ccc;\"></div>"));
+		bottompage.setWidth("1300px");
+		bottompage.setHeight("100px");
+		searchTabPanel.add(bottompage);
+		mainTabPanel.add(searchTabPanel, "Search");
+		mainTabPanel.add(aboutTabPanel, "About");
+		mainTabPanel.selectTab(0);
+
+		bottompage
+				.add(new HTML(
+						"<div><hr style=\"height:8px;;border-width:0;color:#FFFFFF;background-color:#FFFFFF;\"></div>"));
 
 		mainTabPanel.setSize("1300px", "200px");
 		RootPanel rootPanel = RootPanel.get("protease");
@@ -278,8 +325,6 @@ public class PrototypeEntryPoint implements EntryPoint {
 				pepIdArea.setText("P*1\nP*2\nP*3\nP*4");
 				pepUniArea.setText("P02458\nCO1A1_HUMAN\nP02452\nOSTP_HUMAN");
 				pepStartEndArea.setText("575-594\n212-230\n517-539\n33-42");
-				mismList.setItemSelected(3, true);
-
 			}
 		});
 
@@ -291,21 +336,22 @@ public class PrototypeEntryPoint implements EntryPoint {
 				pepIdArea.setText("");
 				pepUniArea.setText("");
 				pepStartEndArea.setText("");
-				mismList.setItemSelected(0, true);
-
 			}
 		});
 
 		// Listen for mouse events on the Add button.
 		searchButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
+				if (!pepUniArea.getText().equals("") || !pepIdArea.getText().equals("")) {
+				popup.setAnimationEnabled(true);
+				popup.setGlassEnabled(true);
 				popup.show();
 				popup.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
-			          public void setPosition(int offsetWidth, int offsetHeight) {
-			            int left = (Window.getClientWidth() - offsetWidth) / 3;
-			            int top = (Window.getClientHeight() - offsetHeight) / 3;
-			            popup.setPopupPosition(left, top);
-			          }
+					public void setPosition(int offsetWidth, int offsetHeight) {
+						int left = (Window.getClientWidth() - offsetWidth) / 3;
+						int top = (Window.getClientHeight() - offsetHeight) / 3;
+						popup.setPopupPosition(left, top);
+					}
 				});
 				// keep search to setup prepared statement
 				// init rpc
@@ -318,16 +364,17 @@ public class PrototypeEntryPoint implements EntryPoint {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-//				 start the process
-
+				// start the process
+				}
 			}
 		});
-		
+
 		closeButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
 				// keep search to setup prepared statement
 				// init rpc
 				popuptoomuch.hide();
+				popupseqvalidity.hide();
 
 			}
 		});
@@ -361,122 +408,78 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private void generateSearchRequest_2() throws IOException {
 
 		String subUni = pepUniArea.getText().toUpperCase().trim();
-		String splitSearchUni[] = subUni.split("\n");
-		LinkedList<String> setUni = new LinkedList<String>();
-		for (String searchUni : splitSearchUni) {
-			searchUni.toUpperCase().trim();
-			setUni.add(searchUni);
-		}
-		int sizeUni = setUni.size();
-		if(sizeUni>100) {
-			popup.hide();
-			popuptoomuch.show();
-			popuptoomuch.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
-		          public void setPosition(int offsetWidth, int offsetHeight) {
-		            int left = (Window.getClientWidth() - offsetWidth) / 3;
-		            int top = (Window.getClientHeight() - offsetHeight) / 3;
-		            popuptoomuch.setPopupPosition(left, top);
-		          }
-			});
-		} else {
-
 		String pepID = pepIdArea.getText().toUpperCase().trim();
-		LinkedList<String> setID = null;
-		if ((!pepID.equalsIgnoreCase(""))) {
-			String splitSearchID[] = pepID.split("\n");
-			setID = new LinkedList<String>();
-			for (String searchID : splitSearchID) {
-				searchID.toUpperCase().trim();
-				setID.add(searchID);
-			}
-		} else {
-			setID = new LinkedList<String>();
-			for (int i = 0; i < sizeUni; i++) {
-				int j = i + 1;
-				String searchID = "P*" + j;
-				setID.add(searchID);
-			}
-		}
-
 		String pepStartEnd = pepStartEndArea.getText().toUpperCase().trim()
 				.toString();
+
+		String splitSearchUni[] = subUni.split("\n");
 		String splitSearchStartEnd[] = pepStartEnd.split("\n");
-		LinkedList<String> setStartEnd = new LinkedList<String>();
-		for (String searchStartEnd : splitSearchStartEnd) {
-			searchStartEnd.toUpperCase().trim();
-			setStartEnd.add(searchStartEnd);
-		}
 
-		int pepMismIndex = mismList.getSelectedIndex();
-		String pepMism = mismList.getItemText(pepMismIndex);
-		int pepMismNumber = 0;
+		if (splitSearchUni.length > 100) {
+			popup.hide();
+			popuptoomuch.setAnimationEnabled(true);
+			popuptoomuch.setGlassEnabled(true);
+			popuptoomuch.show();
+			popuptoomuch
+					.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+						public void setPosition(int offsetWidth,
+								int offsetHeight) {
+							int left = (Window.getClientWidth() - offsetWidth) / 3;
+							int top = (Window.getClientHeight() - offsetHeight) / 3;
+							popuptoomuch.setPopupPosition(left, top);
+						}
+					});
+		} else {
 
-		if (pepMism.contains("0")) {
-			pepMismNumber = 0;
-		} else if (pepMism.contains("1")) {
-			pepMismNumber = 1;
-		} else if (pepMism.contains("2")) {
-			pepMismNumber = 2;
-		} else if (pepMism.contains("3")) {
-			pepMismNumber = 3;
-		}
+			LinkedList<QueryInput> input = new LinkedList<QueryInput>();
 
-		QueryInput[] queryIn = new QueryInput[sizeUni];
-		int i = 0;
+			for (int i = 0; i < splitSearchUni.length; i++) {
+				QueryInput in = new QueryInput();
+				PeptideData peptide = new PeptideData();
+				SubstrateData substrate = new SubstrateData();
+				substrate.S_Uniprotid = splitSearchUni[i];
+				String splitSearchID[] = pepID.split("\n");
+				peptide.Pep_Id = !pepID.equals("") ? splitSearchID[i] : "ID"
+						+ i;
 
-		Iterator iteratorID = setID.iterator();
-		while (iteratorID.hasNext()) {
-			String id = iteratorID.next().toString();
-			String valuesplitID[] = id.split("\n");
-			for (String string : valuesplitID) {
-				queryIn[i] = new QueryInput();
-				queryIn[i].setPeptideInId(string);
-				queryIn[i].setPeptideInMism(pepMismNumber);
-				i++;
+				if (splitSearchStartEnd[i].contains("-")) {
+					String splitsplitStartEnd[] = splitSearchStartEnd[i]
+							.split("-");
+					peptide.Pep_Start = Integer.parseInt(splitsplitStartEnd[0]);
+					peptide.Pep_End = Integer.parseInt(splitsplitStartEnd[1]);
+					peptide.Pep_sequence = "";
+				} else if (splitSearchStartEnd[i].contains("\t")) {
+					String splitsplitStartEnd[] = splitSearchStartEnd[i]
+							.split("\t");
+					peptide.Pep_Start = Integer.parseInt(splitsplitStartEnd[0]);
+					peptide.Pep_End = Integer.parseInt(splitsplitStartEnd[1]);
+					peptide.Pep_sequence = "";
+				} else {
+					peptide.Pep_sequence = splitSearchStartEnd[i];
+				}
+				in.setPeptide(peptide);
+				in.setSubstrate(substrate);
+				input.add(in);
 			}
+			QueryInput[] queryIn = new QueryInput[splitSearchUni.length];
+			input.toArray(queryIn);
+			getResultbyPeptideInfo_2(queryIn);
 		}
-
-		i = 0;
-		Iterator iteratorUni = setUni.iterator();
-		while (iteratorUni.hasNext()) {
-			String uni = iteratorUni.next().toString();
-			String valuesplitUni[] = uni.split("\n");
-			for (String string : valuesplitUni) {
-				queryIn[i].setPeptideInUniprot(string);
-				i++;
-			}
-		}
-
-		i = 0;
-		Iterator iteratorStartEnd = setStartEnd.iterator();
-		while (iteratorStartEnd.hasNext()) {
-			String startend = iteratorStartEnd.next().toString();
-			String valuesplitStartEnd[] = startend.split("\n");
-			for (String string : valuesplitStartEnd) {
-				String splitStartEnd[] = string.split("-");
-				int start = Integer.parseInt(splitStartEnd[0]);
-				int end = Integer.parseInt(splitStartEnd[1]);
-				queryIn[i].setPeptideInStart(start);
-				queryIn[i].setPeptideInEnd(end);
-				i++;
-			}
-		}
-
-		getResultbyPeptideInfo_2(queryIn);
-		}
-
 	}
 
 	private void getResultbyPeptideInfo_2(QueryInput[] queryIn) {
 
 		// empty if anything is there already
-		summary.clear();
-		allresult.clear();
+		Proteaseresult.clear();
+		CSresult.clear();
+		gross1.clear();
+		gross2.clear();
 		gross.clear();
 		resultTabPanel.clear();
 		resultPanel.clear();
-		mainTabPanel.add(resultPanel);
-		
+		searchTabPanel.remove(bottompage);
+		searchTabPanel.add(resultPanel);
+		searchTabPanel.add(bottompage);
 
 		AsyncCallback callback = new AsyncCallback() {
 
@@ -491,7 +494,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 				QueryOutput[] queryOut = (QueryOutput[]) result;
 				// TODO modify here
 				// draw PEPTIDE info
-			
+
 				drawResultbyPeptideInfo_2(queryOut);
 
 			}
@@ -499,637 +502,705 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		// remote procedure call to the server to get the bible info
 		callProvider.getResultInfo(queryIn, callback);
-		
-		bottompage.setWidth("1300px");
-		bottompage.setHeight("100px");
-		mainTabPanel.add(bottompage);
 	}
 
-	private void drawResultbyPeptideInfo_2(QueryOutput[] queryOut) {
+	private void drawResultbyPeptideInfo_2(QueryOutput[] queryCSOut) {
 
 		// if null nothing to do, then exit
 		// this will prevent errors from showing up
-		if (queryOut == null) {
+		if (queryCSOut == null) {
 			return;
 		}
-		
-		
+
 		resultPanel.add(result);
 		result.addStyleName("lResult");
-		resultPanel.add(resultTabPanel);
-		resultTabPanel.add(summary, "Summary View");
-		resultTabPanel.add(allresult, "Complete View");
+		resultTabPanel.add(Proteaseresult, "Protease View");
+		resultTabPanel.add(CSresult, "Cleavage Site View");
 		resultTabPanel.selectTab(0);
 		popup.hide();
 		
-		 
-		int numbercs_2 = 0;
-		int numberdispep_2 = 0;
-		int numbersumm_2 = 0;
-
-		for (QueryOutput queryOut2 : queryOut) {
-			numbercs_2++;
-		}
+		if (!queryCSOut[queryCSOut.length-1].peptide.Pep_Seqvalidity) {
+			String sequence = queryCSOut[queryCSOut.length-1].peptide.Pep_sequence;
+			Label lblseqvalidity = new Label(
+					"Oups sorry, the sequence " + sequence + " is not valid!");
+			lblseqvalidity.addStyleName("lResult");
+			pseqvalidity.add(lblseqvalidity);
+			pseqvalidity.add(closeButton);
+			popupseqvalidity.add(pseqvalidity);
+			popupseqvalidity.setAnimationEnabled(true);
+			popupseqvalidity.setGlassEnabled(true);
+			popupseqvalidity.show();
+			popupseqvalidity
+					.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+						public void setPosition(int offsetWidth,
+								int offsetHeight) {
+							int left = (Window.getClientWidth() - offsetWidth) / 3;
+							int top = (Window.getClientHeight() - offsetHeight) / 3;
+							popupseqvalidity.setPopupPosition(left, top);
+						}
+					});
+		} else {
+		List<QueryOutput> CSOutput = Arrays.asList(queryCSOut);
 		
-		QueryOutput[] resultcs_2 = new QueryOutput[numbercs_2];
-
-		int k = 0;
-		int l = 0;
-		int m = 0;
-
-		for (int i = 0; i < queryOut.length; i++) {
-			System.out.println(queryOut[i]);
-			resultcs_2[k] = queryOut[i];
-			k++;
-		}
+		// get total number of protease/CS combination
+		int totalcombi = queryCSOut.length;
 		
-		
-		
-//
-		Map<String, List<Set<String>>> hmap = new HashMap<String, List<Set<String>>>();
-		for (int i = 0; i < numbercs_2; i++) {
-			String key = resultcs_2[i].peptide.Pep_Id
-					+ resultcs_2[i].substrate.S_Symbol
-					+ resultcs_2[i].cleavagesite.CS_InputCS
-					+ resultcs_2[i].protease.P_Symbol.toUpperCase();
-			if (!(resultcs_2[i].cleavagesite.CS_OutputCS.equals("------")) && !(resultcs_2[i].peptide.Pep_Id.equals("clocloforever"))) {
-				if (!hmap.containsKey(key)) {
-					List value = new ArrayList<Set<String>>();
-					for (int j = 0; j < 12; j++) {
-						value.add(new HashSet<String>());
-					}
-					hmap.put(key, value);
-				}
-				hmap.get(key).get(0).add(resultcs_2[i].peptide.Pep_Id);
-				hmap.get(key).get(1).add(resultcs_2[i].cleavagesite.CS_NorCterm);
-				hmap.get(key).get(2).add(resultcs_2[i].substrate.S_Symbol);
-				hmap.get(key).get(3).add(resultcs_2[i].peptide.Pep_sequence);
-				hmap.get(key).get(4).add(resultcs_2[i].cleavagesite.CS_InputCS);
-				hmap.get(key)
-						.get(5)
-						.add(resultcs_2[i].cleavagesite.CS_OutputCS);
-				char cmismatch = resultcs_2[i].cleavagesite.CS_OuputMismatch.charAt(0);
-				String mismatch = Character.toString(cmismatch);
-				hmap.get(key).get(6).add(mismatch);
-				hmap.get(key).get(7)
-						.add(resultcs_2[i].protease.P_Symbol.toUpperCase());
-				hmap.get(key).get(8).add(resultcs_2[i].cleavagesite.CS_Externallink);
-				hmap.get(key).get(9).add(resultcs_2[i].cleavagesite.CS_Pmid);
-				hmap.get(key).get(10).add(resultcs_2[i].protease.P_Uniprotid);
-				hmap.get(key).get(11).add(resultcs_2[i].substrate.S_Uniprotid);
-
-			}
-		}
-		
-		Iterator iterator = hmap.values().iterator();
-		int numbercsSHORT_2 = hmap.size();
-		QueryOutput[] resultcsSHORT_2 = new QueryOutput[numbercsSHORT_2];
-		int i = 0;
-		while (iterator.hasNext()) {
-			SubstrateData substrate = new SubstrateData();
-			ProteaseData protease = new ProteaseData();
-			PeptideData peptide = new PeptideData();
-			CleavageSiteData cleavagesite = new CleavageSiteData();
-			resultcsSHORT_2[i] = new QueryOutput();
-			String values = iterator.next().toString();
-			String splitarray[] = values.split("\\], \\[");
-			String input = splitarray[0];
-			input = input.replaceAll("\\[", "");
-			peptide.Pep_Id = input;
-			cleavagesite.CS_NorCterm = splitarray[1];
-			substrate.S_Symbol = splitarray[2];
-			peptide.Pep_sequence = splitarray[3];
-			cleavagesite.CS_InputCS = splitarray[4];
-			cleavagesite.CS_OutputCS = splitarray[5];
-			protease.P_Symbol = splitarray[7];
-//			cleavagesite.CS_OuputMismatch = splitarray[6];
-			
-			String output = "";
-			if (splitarray[6].contains(", ")) {
-				String splitmultiple[] = splitarray[6]
-						.split(", ");
-				SingleCSOutput[] singleoutput = new SingleCSOutput[splitmultiple.length+1];
-				singleoutput[0] = new SingleCSOutput();
-				singleoutput[0].setGap(55);
-				int k1 = 1;
-				for (int i1 = 0; i1 < splitmultiple.length; i1++) {
-				singleoutput[k1] = new SingleCSOutput();
-				String sgap = splitmultiple[i1];
-				int igap = Integer.parseInt(sgap);
-				singleoutput[k1].setGap(igap);
-				int gapnow = singleoutput[k1].getGap();
-				int gapbefore = singleoutput[k1-1].getGap();
-				
-				if(gapnow<gapbefore) {
-					singleoutput[k1].setGap(igap);
-				}else {
-					singleoutput[k1].setGap(gapbefore);
-				}
-									k1++;
-			}
-				int ioutput = singleoutput[splitmultiple.length].getGap();
-				output = Integer.toString(ioutput);
-				
-			}else {
-				output = splitarray[6];
-				
-			}
-			
-			cleavagesite.CS_OuputMismatch = output;
-			
-			String externallink = splitarray[8].toString();
-			cleavagesite.CS_Externallink = externallink;
-			String pmid = splitarray[9].toString();
-			// pmid = pmid.replaceAll("\\]", "");
-			// pmid = pmid.replaceFirst(", ", "");
-			cleavagesite.CS_Pmid = pmid;
-			String puni = splitarray[10].toString();
-			String suni = splitarray[11].toString();
-			suni = suni.replaceAll("\\]", "");
-			protease.P_Uniprotid = puni;
-			substrate.S_Uniprotid = suni;
-			resultcsSHORT_2[i].setProtease(protease);
-			resultcsSHORT_2[i].setSubstrate(substrate);
-			resultcsSHORT_2[i].setPeptide(peptide);
-			resultcsSHORT_2[i].setCleavagesite(cleavagesite);
-			i++;
-		}
-
-		List<QueryOutput> resultcslist = Arrays
-				.asList(resultcsSHORT_2);
-
-		Map<String, List<Set<String>>> retrievedcslist = new HashMap<String, List<Set<String>>>();
-		for (int i1 = 0; i1 < numbercs_2; i1++) {
-			String key = resultcs_2[i1].peptide.Pep_Id
-			+ resultcs_2[i1].cleavagesite.CS_NorCterm;
-			if (!(resultcs_2[i1].cleavagesite.CS_OutputCS.equals("------")) && !(resultcs_2[i1].peptide.Pep_Id.equals("clocloforever"))) {
-				if (!retrievedcslist.containsKey(key)) {
-					List value = new ArrayList<Set<String>>();
-					for (int j = 0; j < 2; j++) {
-						value.add(new HashSet<String>());
-					}
-					retrievedcslist.put(key, value);
-				}
-				retrievedcslist.get(key).get(0).add(resultcs_2[i1].peptide.Pep_Id);
-				retrievedcslist.get(key).get(1).add(resultcs_2[i1].cleavagesite.CS_NorCterm);
-			}
-		}
-		
-		System.out.println(retrievedcslist.size());
-	
-		createCleavageSiteTable_2(resultcsSHORT_2, resultcslist);
-		createSummary_2(retrievedcslist, resultcsSHORT_2);
-		
-
-				
-	}
-//
-	private void createSummary_2(Map retrievedcsmap, QueryOutput[] resultcsSHORT_2) {
-		
+		// get total number of peptides
 		String subUni = pepUniArea.getText().toUpperCase().trim();
 		String splitSearchUni[] = subUni.split("\n");
-		LinkedList<String> setUni = new LinkedList<String>();
-		for (String searchUni : splitSearchUni) {
-			searchUni.toUpperCase().trim();
-			setUni.add(searchUni);
-		}
-		
-		int totalpeptides = setUni.size();
-		int totalcs = totalpeptides * 2;
-		String stotalpeptides = Integer.toString(totalpeptides);
-		String stotalcs = Integer.toString(totalcs);
-		
-		
-		int retrievedcs = retrievedcsmap.size();
-		float percentretrievedcs = (float) retrievedcs / totalcs * 100;
-		
-		String sretrievedcs = Integer.toString(retrievedcs);
+		int totalpep = splitSearchUni.length;
 
-		Map<String, List<Set<String>>> retrievedpeptidesmap = new HashMap<String, List<Set<String>>>();
-		Iterator iterator = retrievedcsmap.values().iterator();
-		int i = 0;
+		// get total number of CS
+		int totalCS = totalpep * 2;
+
+		// get predicted unique peptides
+		int predictedpep = 0;
+		HashMap<String, String> uniquepep = new HashMap<String, String>();
+		for (QueryOutput string : queryCSOut) {
+			String key = string.peptide.Pep_Id;
+			if (!uniquepep.containsKey(key)) {
+				String value = null;
+				uniquepep.put(key, value);
+			}
+		}
+		predictedpep = uniquepep.size();		
+		float percentretrievedpep = (float) predictedpep / totalpep * 100;
+		
+		// get predicted unique CS
+		int predictedCS = 0;
+		HashMap<String, String> uniquecs = new HashMap<String, String>();
+		for (QueryOutput string : queryCSOut) {
+			String key = string.peptide.Pep_Id + string.cleavagesite.CS_NorCterm;
+			if (!uniquecs.containsKey(key)) {
+				String value = null;
+				uniquecs.put(key, value);
+			}
+		}
+		predictedCS = uniquecs.size();
+		float percentretrievedCS = (float) predictedCS / totalCS * 100;
+		
+		gross.add(new HTML("<font><dd>Number of predicted protease/cleavage site associations: <b>" + totalcombi+ "</b></font>"));
+		gross1.add(new HTML(
+		 "<font><dd>Total number of submitted peptides: <b>"
+		 + totalpep
+		 + "</b><br /><dd>Total number of potential cleavage sites: <b>"
+		 + totalCS
+		 + "</b><br /></font"));
+		 
+		 gross2.add(new HTML("<font><dd>Peptides with at least one result: <b>"
+		 + predictedpep
+		 + "</b> (<b>"
+		 + percentretrievedpep
+		 +
+		 "</b>% of total number of submitted peptides)<br /><dd>Cleavage sites with at least one result: <b>"
+		 + predictedCS
+		 + "</b> (<b>"
+		 + percentretrievedCS
+		 + "</b>% of total number of potential cleavage sites)</font>"));
+		 gross.add(gross1);
+		 gross.add(gross2);
+		 gross.addStyleName("pSearchpanel");
+		 resultPanel.add(gross);
+		 resultPanel.add(resultTabPanel);
+		 
+		Map<String, List<Set<String>>> processedProteasehmap = new HashMap<String, List<Set<String>>>();
+		for (QueryOutput queryOutput : queryCSOut) {
+			String key = queryOutput.protease.P_Uniprotid;
+			if (!processedProteasehmap.containsKey(key)) {
+				List value = new ArrayList<Set<String>>();
+				for (int j = 0; j < 10; j++) {
+					value.add(new HashSet<String>());
+				}
+				processedProteasehmap.put(key, value);
+			}
+			processedProteasehmap.get(key).get(0)
+					.add(queryOutput.protease.P_Symbol);
+			processedProteasehmap.get(key).get(1)
+					.add(queryOutput.protease.P_Uniprotid);
+			if (queryOutput.confidence.equals(SPSL))
+				processedProteasehmap
+						.get(key)
+						.get(2)
+						.add(queryOutput.peptide.Pep_Id
+								+ queryOutput.cleavagesite.CS_NorCterm);
+			else if (queryOutput.confidence.equals(SS))
+				processedProteasehmap
+						.get(key)
+						.get(3)
+						.add(queryOutput.peptide.Pep_Id
+								+ queryOutput.cleavagesite.CS_NorCterm);
+			else if (queryOutput.confidence.equals(HP))
+				processedProteasehmap
+						.get(key)
+						.get(4)
+						.add(queryOutput.peptide.Pep_Id
+								+ queryOutput.cleavagesite.CS_NorCterm);
+			else if (queryOutput.confidence.equals(P))
+				processedProteasehmap
+						.get(key)
+						.get(5)
+						.add(queryOutput.peptide.Pep_Id
+								+ queryOutput.cleavagesite.CS_NorCterm);
+			else if (queryOutput.confidence.equals(mm1))
+				processedProteasehmap
+						.get(key)
+						.get(6)
+						.add(queryOutput.peptide.Pep_Id
+								+ queryOutput.cleavagesite.CS_NorCterm);
+			else if (queryOutput.confidence.equals(mm2))
+				processedProteasehmap
+						.get(key)
+						.get(7)
+						.add(queryOutput.peptide.Pep_Id
+								+ queryOutput.cleavagesite.CS_NorCterm);
+			else if (queryOutput.confidence.equals(mm3))
+				processedProteasehmap
+						.get(key)
+						.get(8)
+						.add(queryOutput.peptide.Pep_Id
+								+ queryOutput.cleavagesite.CS_NorCterm);
+			processedProteasehmap.get(key).get(9).add(queryOutput.protease.P_OMIM);
+		}
+
+		Iterator iterator = processedProteasehmap.values().iterator();
+		LinkedList<QueryOutput> processedProteaseOutput = new LinkedList<QueryOutput>();
 		while (iterator.hasNext()) {
+			int iSPSL = 0;
+			int iSS = 0;
+			int iHP = 0;
+			int iP = 0;
+			int i1mm = 0;
+			int i2mm = 0;
+			int i3mm = 0;
+			QueryOutput processedProtout = new QueryOutput();
+			ProteaseData protease = new ProteaseData();
 			String values = iterator.next().toString();
 			String splitarray[] = values.split("\\], \\[");
-			String peptide = splitarray[0];
-			peptide = peptide.replaceAll("\\[", "");
-			peptide = peptide.replaceAll("\\]", "");
-			String key = peptide;
-			if (!peptide.equals("clocloforever")){
-				if (!retrievedpeptidesmap.containsKey(key)) {
-					List value = new ArrayList<Set<String>>();
-					for (int j = 0; j < 1; j++) {
-						value.add(new HashSet<String>());
-					}
-					retrievedpeptidesmap.put(key, value);
-				}
-				retrievedpeptidesmap.get(key).get(0).add(peptide);
-				}
-			
-			i++;
+			String protsymbol = splitarray[0];
+			protsymbol = protsymbol.replaceAll("\\[", "");
+			protease.P_Symbol = protsymbol;
+			protease.P_Uniprotid = splitarray[1];
+			String resultSPSL = splitarray[2];
+			protease.totalSPSL = getTotalProteaseConfidence(iSPSL, resultSPSL);
+			String resultSS = splitarray[3];
+			protease.totalSS = getTotalProteaseConfidence(iSS, resultSS);
+			String resultHP = splitarray[4];
+			protease.totalHP = getTotalProteaseConfidence(iHP, resultHP);
+			String resultP = splitarray[5];
+			protease.totalP = getTotalProteaseConfidence(iP, resultP);
+			String resultmm1 = splitarray[6];
+			protease.total1mm = getTotalProteaseConfidence(i1mm, resultmm1);
+			String resultmm2 = splitarray[7];
+			protease.total2mm = getTotalProteaseConfidence(i2mm, resultmm2);
+			String resultmm3 = splitarray[8];
+			protease.total3mm = getTotalProteaseConfidence(i3mm, resultmm3);
+			String omim = splitarray[9];
+			omim = omim.replaceAll("\\]", "");
+			protease.P_OMIM = omim;
+			processedProtout.setProtease(protease);
+			processedProteaseOutput.add(processedProtout);
 		}
-		
-		int retrievedpeptides = retrievedpeptidesmap.size();
-		float percentretrievedpeptides = (float) retrievedpeptides / totalpeptides * 100;
-		
-		String sretrievedpetpides = Integer.toString(retrievedpeptides);
-		
-		
 
-		summary.add(gross);
-		gross.add(new HTML("<font><dd>Total number of submitted peptides: <b>"+ stotalpeptides + "</b><br /><dd>Total number of potential cleavage sites: <b>"+ stotalcs + "</b><br /><br /><dd>Peptides with at least one result: <b>"+ sretrievedpetpides + "</b> (<b>"+ percentretrievedpeptides + "</b>% of total number of submitted peptides)<br /><dd>Cleavage sites with at least one result: <b>"+ sretrievedcs + "</b> (<b>"+ percentretrievedcs + "</b>% of total number of potential cleavage sites)</font>"));
-		
-		createSummaryTable_2(totalcs, resultcsSHORT_2);
+		QueryOutput[] queryProtOut = new QueryOutput[processedProteaseOutput
+				.size()];
+		processedProteaseOutput.toArray(queryProtOut);
 
+		createCleavageSiteTable(queryCSOut, CSOutput);
+		createProteaseTable(queryProtOut, processedProteaseOutput);
+		}
+
+	}
+
+	private int getTotalProteaseConfidence(int iConfidence,
+			String resultConfidence) {
+		if (!resultConfidence.equals("")) {
+			String resultConfidenceArray[] = resultConfidence.split(", ");
+			iConfidence = resultConfidenceArray.length;
+		}
+		return iConfidence;
+	}
+
+	private void createProteaseTable(QueryOutput[] ProteaseOutputArray, LinkedList<QueryOutput> ProteaseOutputList) {
+		int rowsprot = ProteaseOutputArray.length;
+		
+		 CellTable.Resources ptableresources = GWT.create(PTableResources.class);
+		 CellTable<QueryOutput> proteaseTable = new CellTable<QueryOutput>(
+				 rowsprot, ptableresources);
+		 proteaseTable.setWidth("1280px");
+		 
+		 Column<QueryOutput, SafeHtml> Prot_Protease = new Column<QueryOutput, SafeHtml>(
+					new SafeHtmlCell()) {
+				@Override
+				public SafeHtml getValue(QueryOutput result) {
+					String protease = result.protease.P_Symbol;
+					return new SafeHtmlBuilder().appendHtmlConstant(
+							"<a href=\"http://www.uniprot.org/uniprot/"
+									+ result.protease.P_Uniprotid
+									+ "\"target=\"_blank\">" + protease + "</a>")
+							.toSafeHtml();
+				}
+			};
+			
+			Column<QueryOutput, SafeHtml> Prot_ConfidenceSPSL =new Column<QueryOutput, SafeHtml>(
+					new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				int input = result.protease.totalSPSL;
+				String color = "white";
+				if (input>0 && input < 3)
+					color = "#E0F8EC";
+				if (input>=3 && input <10)
+					color = "#A9F5D0";
+				if (input>=10 && input <20)
+					color = "#58FAAC";
+				if (input>=20 && input <50)
+					color = "#00FF80";
+				if (input>=50 && input <100)
+					color = "#04B45F";
+				String sinput = Integer.toString(input);
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+			}
+		};
+
+			Column<QueryOutput, SafeHtml> Prot_ConfidenceSS =new Column<QueryOutput, SafeHtml>(
+					new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				int input = result.protease.totalSS;
+				String color = "white";
+				if (input>0 && input < 3)
+					color = "#E0F8EC";
+				if (input>=3 && input <10)
+					color = "#A9F5D0";
+				if (input>=10 && input <20)
+					color = "#58FAAC";
+				if (input>=20 && input <50)
+					color = "#00FF80";
+				if (input>=50 && input <100)
+					color = "#04B45F";
+				String sinput = Integer.toString(input);
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+			}
+		};
+//			Column<QueryOutput, SafeHtml> Prot_ConfidenceHP =new Column<QueryOutput, SafeHtml>(
+//					new SafeHtmlCell()) {
+//			@Override
+//			public SafeHtml getValue(QueryOutput result) {
+//				int input = result.protease.totalHP;
+//				String color = "white";
+//				if (input>0 && input < 5)
+//					color = "E9FFF7";
+//				if (input>=5 && input <10)
+//					color = "C2FDE7";
+//				String sinput = Integer.toString(input);
+//				return new SafeHtmlBuilder().appendHtmlConstant(
+//						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+//			}
+//		};
+//
+//			Column<QueryOutput, SafeHtml> Prot_ConfidenceP =new Column<QueryOutput, SafeHtml>(
+//					new SafeHtmlCell()) {
+//			@Override
+//			public SafeHtml getValue(QueryOutput result) {
+//				int input = result.protease.totalP;
+//				String color = "white";
+//				if (input>0 && input < 5)
+//					color = "#E0F8EC";
+//				if (input>=5 && input <10)
+//					color = "#A9F5D0";
+//				if (input>=10 && input <20)
+//					color = "#58FAAC";
+//				if (input>=20 && input <50)
+//					color = "#00FF80";
+//				if (input>=50 && input <100)
+//					color = "#04B45F";
+//				String sinput = Integer.toString(input);
+//				return new SafeHtmlBuilder().appendHtmlConstant(
+//						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+//			}
+//		};
+
+			Column<QueryOutput, SafeHtml> Prot_Confidencemm1 =new Column<QueryOutput, SafeHtml>(
+					new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				int input = result.protease.total1mm;
+				String color = "white";
+				if (input>0 && input < 3)
+					color = "#E0F8EC";
+				if (input>=3 && input <10)
+					color = "#A9F5D0";
+				if (input>=10 && input <20)
+					color = "#58FAAC";
+				if (input>=20 && input <50)
+					color = "#00FF80";
+				if (input>=50 && input <100)
+					color = "#04B45F";
+				String sinput = Integer.toString(input);
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+			}
+		};
+
+		Column<QueryOutput, SafeHtml> Prot_Confidencemm2 =new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+		@Override
+		public SafeHtml getValue(QueryOutput result) {
+			int input = result.protease.total2mm;
+			String color = "white";
+			if (input>0 && input < 3)
+				color = "#E0F8EC";
+			if (input>=3 && input <10)
+				color = "#A9F5D0";
+			if (input>=10 && input <20)
+				color = "#58FAAC";
+			if (input>=20 && input <50)
+				color = "#00FF80";
+			if (input>=50 && input <100)
+				color = "#04B45F";
+			String sinput = Integer.toString(input);
+			return new SafeHtmlBuilder().appendHtmlConstant(
+					"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+		}
+	};
+
+			 Column<QueryOutput, SafeHtml> Prot_Confidencemm3 =new Column<QueryOutput, SafeHtml>(
+						new SafeHtmlCell()) {
+				@Override
+				public SafeHtml getValue(QueryOutput result) {
+					int input = result.protease.total3mm;
+					String color = "white";
+					if (input>0 && input < 3)
+						color = "#E0F8EC";
+					if (input>=3 && input <10)
+						color = "#A9F5D0";
+					if (input>=10 && input <20)
+						color = "#58FAAC";
+					if (input>=20 && input <50)
+						color = "#00FF80";
+					if (input>=50 && input <100)
+						color = "#04B45F";
+					String sinput = Integer.toString(input);
+					return new SafeHtmlBuilder().appendHtmlConstant(
+							"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+				}
+			};
+			
+			 Column<QueryOutput, SafeHtml> Prot_TOTAL =new Column<QueryOutput, SafeHtml>(
+						new SafeHtmlCell()) {
+				@Override
+				public SafeHtml getValue(QueryOutput result) {
+					int input = result.protease.totalSPSL + result.protease.totalSS + result.protease.total1mm + result.protease.total2mm + result.protease.total3mm;
+					String color = "white";
+					if (input>0 && input < 3)
+						color = "#E0F8EC";
+					if (input>=3 && input <10)
+						color = "#A9F5D0";
+					if (input>=10 && input <20)
+						color = "#58FAAC";
+					if (input>=20 && input <50)
+						color = "#00FF80";
+					if (input>=50 && input <100)
+						color = "#04B45F";
+					String sinput = Integer.toString(input);
+					return new SafeHtmlBuilder().appendHtmlConstant(
+							"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+				}
+			};
+			
+//			 Column<QueryOutput, SafeHtml> Prot_OMIM = new Column<QueryOutput, SafeHtml>(
+//						new SafeHtmlCell()) {
+//					@Override
+//					public SafeHtml getValue(QueryOutput result) {
+//						String omim = result.protease.P_OMIM;
+//						if (omim.equals("-"))
+//							return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
+//						return new SafeHtmlBuilder().appendHtmlConstant(
+//								"<a href=\"http://omim.org/entry/"
+//										+ omim
+//										+ "\"target=\"_blank\">" + omim + "</a>")
+//								.toSafeHtml();
+//					}
+//				};
+				
+		Prot_Protease.setSortable(true);
+		Prot_ConfidenceSPSL.setSortable(true);
+		Prot_ConfidenceSS.setSortable(true);
+//		Prot_ConfidenceHP.setSortable(true);
+//		Prot_ConfidenceP.setSortable(true);
+		Prot_Confidencemm1.setSortable(true);
+		Prot_Confidencemm2.setSortable(true);
+		Prot_Confidencemm3.setSortable(true);
+		Prot_TOTAL.setSortable(true);
+		proteaseTable.addColumn(Prot_Protease, "\u25B2Protease\u25BC");
+		proteaseTable.addColumn(Prot_ConfidenceSPSL, "\u25B2Confidence ++++\u25BC");
+		proteaseTable.addColumn(Prot_ConfidenceSS, "\u25B2Confidence +++\u25BC");
+//		proteaseTable.addColumn(Prot_ConfidenceHP, "\u25B2Confidence ++\u25BC");
+//		proteaseTable.addColumn(Prot_ConfidenceP, "\u25B2Confidence +\u25BC");
+		proteaseTable.addColumn(Prot_Confidencemm1, "\u25B2Confidence +-\u25BC");
+		proteaseTable.addColumn(Prot_Confidencemm2, "\u25B2Confidence +--\u25BC");
+		proteaseTable.addColumn(Prot_Confidencemm3, "\u25B2Confidence +---\u25BC");
+		proteaseTable.addColumn(Prot_TOTAL, "\u25B2Total\u25BC");
+//		proteaseTable.addColumn(Prot_OMIM, "OMIM");
 //		
-		
-	}
-	
-	private void createSummaryTable_2(int totalcs, QueryOutput[] resultcsSHORT_2) {
-		
-	
-		int numbercsSHORT_2 = resultcsSHORT_2.length;
-		
-		Map<String, List<Set<String>>> summtable = new HashMap<String, List<Set<String>>>();
-		for (int i = 0; i < numbercsSHORT_2; i++) {
-			String key = resultcsSHORT_2[i].protease.P_Symbol;
-			if (!(resultcsSHORT_2[i].cleavagesite.CS_OutputCS.equals("------")) && !(resultcsSHORT_2[i].peptide.Pep_Id.equals("clocloforever"))) {
-				if (!summtable.containsKey(key)) {
-					List value = new ArrayList<Set<String>>();
-					for (int j = 0; j < 2; j++) {
-						value.add(new HashSet<String>());
-					}
-					summtable.put(key, value);
-				}
-				summtable.get(key).get(0).add(resultcsSHORT_2[i].protease.P_Symbol);
-				char cmismatch = resultcsSHORT_2[i].cleavagesite.CS_OuputMismatch.charAt(0);
-				String mismatch = Character.toString(cmismatch);
-				summtable.get(key).get(1).add(resultcsSHORT_2[i].cleavagesite.CS_InputCS + "\t" + resultcsSHORT_2[i].cleavagesite.CS_NorCterm + "\t"+ resultcsSHORT_2[i].peptide.Pep_Id + "\t"+ mismatch);
-			}
-		}
-		
-		Iterator iterator = summtable.values().iterator();
-		int numbersumm = summtable.size();
-		SummaryTable[] summtablentry = new SummaryTable[numbersumm];	
-		int i = 0;
-		while (iterator.hasNext()) {
-			summtablentry[i] = new SummaryTable();
-			String values = iterator.next().toString();
-			String splitarray[] = values.split("\\], \\[");
-			String protease = splitarray[0];
-			protease = protease.replaceAll("\\[", "");
-			summtablentry[i].setP_Symbol(protease);
-			String allmm = splitarray[1];
-			allmm = allmm.replaceAll("\\]", "");
-			String[] allmmsplit = allmm.split(", ");
-			int j=0;
-			int number0 = 0;
-			int number1 = 0;
-			int number2 = 0;
-			int number3 = 0;
-			for (String string : allmmsplit) {
-				String[] allmmsplitsplit = string.split("\t");
-				for (String string2 : allmmsplitsplit) {
-				
-				if (string2.equals("0")) {
-					number0++;
-				} else if (string2.equals("1") ){
-					number1++;
-				}else if (string2.equals("2") ){
-					number2++;
-				}
-				else if (string2.equals("3") ){
-					number3++;
-				}
-				j++;
-			}
-			}
-			
-			summtablentry[i].setNumber0(number0);
-			summtablentry[i].setNumberupto1(number0 + number1);
-			summtablentry[i].setNumberupto2(number0 + number1 + number2);
-			summtablentry[i].setNumberupto3(number0 + number1 + number2 + number3);
-			summtablentry[i].setSnumber0(Integer.toString(number0));
-			summtablentry[i].setSnumberupto1(Integer.toString(number0 + number1));
-			summtablentry[i].setSnumberupto2(Integer.toString(number0 + number1 + number2));
-			summtablentry[i].setSnumberupto3(Integer.toString(number0 + number1 + number3));
-		
-			i++;
-		}
+		Proteaseresult.add(proteaseTable);
+		// Create a data provider.
+				ListDataProvider<QueryOutput> csdataProvider = new ListDataProvider<QueryOutput>();
 
-		List<SummaryTable> resultsummlist = Arrays
-				.asList(summtablentry);
+				// Connect the table to the data provider.
+				csdataProvider.addDataDisplay(proteaseTable);
 
-		int rowssumm = summtablentry.length;
-		CellTable.Resources ptableresources = GWT.create(PTableResources.class);
-		CellTable<SummaryTable> summTable = new CellTable<SummaryTable>(
-				rowssumm, ptableresources);
-		summTable.setWidth("1280px");
-		
-		Column<SummaryTable, SafeHtml> proteaseCol = new Column<SummaryTable, SafeHtml>(
-				new SafeHtmlCell()) {
-			@Override
-			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
-				String protease = resultbySubstrateData.getP_Symbol()
-						.toUpperCase();
-				return new SafeHtmlBuilder().appendHtmlConstant(protease)
-						.toSafeHtml();
-
-			}
-
-		};
-		
-		Column<SummaryTable, SafeHtml> perfectmatch = new Column<SummaryTable, SafeHtml>(
-				new SafeHtmlCell()) {
-			@Override
-			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
-				int number0 = resultbySubstrateData.getNumber0();
-				String snumber0 = "";
-				snumber0 = Integer.toString(number0);
-				return new SafeHtmlBuilder().appendHtmlConstant(snumber0)
-						.toSafeHtml();
-			}
-		};
-		
-		Column<SummaryTable, SafeHtml> upto1match = new Column<SummaryTable, SafeHtml>(
-				new SafeHtmlCell()) {
-			@Override
-			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
-				int number1 = resultbySubstrateData.getNumberupto1();
-				String snumber1 = "";
-				
-				int pepMismIndex = mismList.getSelectedIndex();
-				String pepMism = mismList.getItemText(pepMismIndex);
-				int pepMismNumber = 0;
-
-				if (pepMism.contains("0")) {
-					pepMismNumber = 0;
-				} else if (pepMism.contains("1")) {
-					pepMismNumber = 1;
-				} else if (pepMism.contains("2")) {
-					pepMismNumber = 2;
-				} else if (pepMism.contains("3")) {
-					pepMismNumber = 3;
+				// Add the data to the data provider, which automatically pushes it to
+				// the
+				// widget
+				List<QueryOutput> proteaselist = csdataProvider.getList();
+				for (QueryOutput proteaseresultTable : ProteaseOutputList) {
+					proteaselist.add(proteaseresultTable);
 				}
-				
-				if (pepMismNumber == 0) {
-					snumber1 = "-";
-				} else {
-					snumber1 = Integer.toString(number1);
-				}
-				return new SafeHtmlBuilder().appendHtmlConstant(snumber1)
-						.toSafeHtml();
-			}
-		};
-		
-		Column<SummaryTable, SafeHtml> upto2match = new Column<SummaryTable, SafeHtml>(
-				new SafeHtmlCell()) {
-			@Override
-			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
-				int number2 = resultbySubstrateData.getNumberupto2();
-				String snumber2 = "";
-				
-				int pepMismIndex = mismList.getSelectedIndex();
-				String pepMism = mismList.getItemText(pepMismIndex);
-				int pepMismNumber = 0;
-				
-				if (pepMism.contains("0")) {
-					pepMismNumber = 0;
-				} else if (pepMism.contains("1")) {
-					pepMismNumber = 1;
-				} else if (pepMism.contains("2")) {
-					pepMismNumber = 2;
-				} else if (pepMism.contains("3")) {
-					pepMismNumber = 3;
-				}
-				
-				
-				if (pepMismNumber < 2) {
-					snumber2 = "-";
-				} else {
-					snumber2 = Integer.toString(number2);
-				}
-				return new SafeHtmlBuilder().appendHtmlConstant(snumber2)
-						.toSafeHtml();
-			}
-		};
-		
-		Column<SummaryTable, SafeHtml> upto3match = new Column<SummaryTable, SafeHtml>(
-				new SafeHtmlCell()) {
-			@Override
-			public SafeHtml getValue(SummaryTable resultbySubstrateData) {
-				int number3 = resultbySubstrateData.getNumberupto3();
-				String snumber3 = "";
-				
-				int pepMismIndex = mismList.getSelectedIndex();
-				String pepMism = mismList.getItemText(pepMismIndex);
-				int pepMismNumber = 0;
-				
-				if (pepMism.contains("0")) {
-					pepMismNumber = 0;
-				} else if (pepMism.contains("1")) {
-					pepMismNumber = 1;
-				} else if (pepMism.contains("2")) {
-					pepMismNumber = 2;
-				} else if (pepMism.contains("3")) {
-					pepMismNumber = 3;
-				}
-				
-				if (pepMismNumber<3) {
-					snumber3 = "-";
-				} else {
-					snumber3 = Integer.toString(number3);
-				}
-				return new SafeHtmlBuilder().appendHtmlConstant(snumber3)
-						.toSafeHtml();
-			}
-		};
-		
-		proteaseCol.setSortable(true);
-		perfectmatch.setSortable(true);
-		upto1match.setSortable(true);
-		upto2match.setSortable(true);
-		upto3match.setSortable(true);
-		
-		summTable.addColumn(proteaseCol, "\u25B2Protease\u25BC");
-		summTable.addColumn(perfectmatch, "\u25B20 Mismatch\u25BC");
-		summTable.addColumn(upto1match, "\u25B2Up to 1 Mismatch\u25BC");
-		summTable.addColumn(upto2match, "\u25B2Up to 2 Mismatch\u25BC");
-		summTable.addColumn(upto3match, "\u25B2Up to 3 Mismatch\u25BC");
-		gross.add(summTable);
-		
-		ListDataProvider<SummaryTable> csdataProvider = new ListDataProvider<SummaryTable>();
-
-		// Connect the table to the data provider.
-		csdataProvider.addDataDisplay(summTable);
-
-		// Add the data to the data provider, which automatically pushes it to
-		// the
-		// widget
-		List<SummaryTable> summlist = csdataProvider.getList();
-		for (SummaryTable summresultTable : resultsummlist) {
-			summlist.add(summresultTable);
-		}
-		
-		// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<SummaryTable> proteaseColSortHandler = new ListHandler<SummaryTable>(
-						summlist);
-				proteaseColSortHandler.setComparator(proteaseCol,
-						new Comparator<SummaryTable>() {
-							public int compare(SummaryTable o1,
-									SummaryTable o2) {
-								if (o1 == o2) {
-									return 0;
-								}
-
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.getP_Symbol()
-											.compareTo(o2.getP_Symbol()) : 1;
-								}
-								return -1;
-							}
-						});
-				summTable.addColumnSortHandler(proteaseColSortHandler);
-
-				// We know that the data is sorted alphabetically by default.
-				summTable.getColumnSortList().push(proteaseCol);
 
 				// Add a ColumnSortEvent.ListHandler to connect sorting to the
 				// java.util.List.
-				ListHandler<SummaryTable> mm0ColSortHandler = new ListHandler<SummaryTable>(
-						summlist);
-				mm0ColSortHandler.setComparator(perfectmatch,
-						new Comparator<SummaryTable>() {
-							public int compare(SummaryTable o1,
-									SummaryTable o2) {
+				ListHandler<QueryOutput> proteaseColSortHandler = new ListHandler<QueryOutput>(
+						proteaselist);
+				proteaseColSortHandler.setComparator(Prot_Protease,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
 								if (o1 == o2) {
 									return 0;
 								}
 
 								// Compare the symbol columns.
 								if (o1 != null) {
-									return (o2 != null) ? o1.getSnumber0()
-											.compareTo(o2.getSnumber0()) : 1;
+									return (o2 != null) ? o1.protease.P_Symbol
+											.compareTo(o2.protease.P_Symbol) : 1;
 								}
 								return -1;
 							}
 						});
-				summTable.addColumnSortHandler(mm0ColSortHandler);
+				proteaseTable.addColumnSortHandler(proteaseColSortHandler);
 
 				// We know that the data is sorted alphabetically by default.
-				summTable.getColumnSortList().push(perfectmatch);
+				proteaseTable.getColumnSortList().push(Prot_Protease);
 				
 				// Add a ColumnSortEvent.ListHandler to connect sorting to the
 				// java.util.List.
-				ListHandler<SummaryTable> mm1ColSortHandler = new ListHandler<SummaryTable>(
-						summlist);
-				mm1ColSortHandler.setComparator(upto1match,
-						new Comparator<SummaryTable>() {
-							public int compare(SummaryTable o1,
-									SummaryTable o2) {
+				ListHandler<QueryOutput> SPSLColSortHandler = new ListHandler<QueryOutput>(
+						proteaselist);
+				SPSLColSortHandler.setComparator(Prot_ConfidenceSPSL,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
 								if (o1 == o2) {
 									return 0;
 								}
 
 								// Compare the symbol columns.
 								if (o1 != null) {
-									return (o2 != null) ? o1.getSnumberupto1()
-											.compareTo(o2.getSnumberupto1()) : 1;
+									return (o2 != null) ? Integer.toString( o1.protease.totalSPSL)
+											.compareTo(Integer.toString(o2.protease.totalSPSL)) : 1;
 								}
 								return -1;
 							}
 						});
-				summTable.addColumnSortHandler(mm1ColSortHandler);
+				proteaseTable.addColumnSortHandler(SPSLColSortHandler);
 
 				// We know that the data is sorted alphabetically by default.
-				summTable.getColumnSortList().push(upto1match);
-
+				proteaseTable.getColumnSortList().push(Prot_ConfidenceSPSL);
 				// Add a ColumnSortEvent.ListHandler to connect sorting to the
 				// java.util.List.
-				ListHandler<SummaryTable> mm2ColSortHandler = new ListHandler<SummaryTable>(
-						summlist);
-				mm2ColSortHandler.setComparator(upto2match,
-						new Comparator<SummaryTable>() {
-							public int compare(SummaryTable o1,
-									SummaryTable o2) {
+				
+				ListHandler<QueryOutput> SSColSortHandler = new ListHandler<QueryOutput>(
+						proteaselist);
+				SSColSortHandler.setComparator(Prot_ConfidenceSS,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
 								if (o1 == o2) {
 									return 0;
 								}
 
 								// Compare the symbol columns.
 								if (o1 != null) {
-									return (o2 != null) ? o1.getSnumberupto2()
-											.compareTo(o2.getSnumberupto2()) : 1;
+									return (o2 != null) ? Integer.toString( o1.protease.totalSS)
+											.compareTo(Integer.toString(o2.protease.totalSS)) : 1;
 								}
 								return -1;
 							}
 						});
-				summTable.addColumnSortHandler(mm2ColSortHandler);
+				proteaseTable.addColumnSortHandler(SSColSortHandler);
 
 				// We know that the data is sorted alphabetically by default.
-				summTable.getColumnSortList().push(upto2match);
-
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<SummaryTable> mm3ColSortHandler = new ListHandler<SummaryTable>(
-						summlist);
-				mm3ColSortHandler.setComparator(upto3match,
-						new Comparator<SummaryTable>() {
-							public int compare(SummaryTable o1,
-									SummaryTable o2) {
-								if (o1 == o2) {
-									return 0;
-								}
-
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.getSnumberupto3()
-											.compareTo(o2.getSnumberupto3()) : 1;
-								}
-								return -1;
-							}
-						});
-				summTable.addColumnSortHandler(mm3ColSortHandler);
-
-				// We know that the data is sorted alphabetically by default.
-				summTable.getColumnSortList().push(upto3match);
-
-		
-		
-		
-	}
-//	
-	private void createCleavageSiteTable_2(QueryOutput[] resultcs,
-			List<QueryOutput> resultcslist) {
+				proteaseTable.getColumnSortList().push(Prot_ConfidenceSS);
+				
+//				ListHandler<QueryOutput> HPColSortHandler = new ListHandler<QueryOutput>(
+//						proteaselist);
+//				HPColSortHandler.setComparator(Prot_ConfidenceHP,
+//						new Comparator<QueryOutput>() {
+//							public int compare(QueryOutput o1, QueryOutput o2) {
+//								if (o1 == o2) {
+//									return 0;
+//								}
 //
-		int rowscs = resultcs.length;
+//								// Compare the symbol columns.
+//								if (o1 != null) {
+//									return (o2 != null) ? Integer.toString( o1.protease.totalHP)
+//											.compareTo(Integer.toString(o2.protease.totalHP)) : 1;
+//								}
+//								return -1;
+//							}
+//						});
+//				proteaseTable.addColumnSortHandler(HPColSortHandler);
+//
+//				// We know that the data is sorted alphabetically by default.
+//				proteaseTable.getColumnSortList().push(Prot_ConfidenceHP);
+//				
+//				ListHandler<QueryOutput> PColSortHandler = new ListHandler<QueryOutput>(
+//						proteaselist);
+//				PColSortHandler.setComparator(Prot_ConfidenceP,
+//						new Comparator<QueryOutput>() {
+//							public int compare(QueryOutput o1, QueryOutput o2) {
+//								if (o1 == o2) {
+//									return 0;
+//								}
+//
+//								// Compare the symbol columns.
+//								if (o1 != null) {
+//									return (o2 != null) ? Integer.toString( o1.protease.totalP)
+//											.compareTo(Integer.toString(o2.protease.totalP)) : 1;
+//								}
+//								return -1;
+//							}
+//						});
+//				proteaseTable.addColumnSortHandler(PColSortHandler);
+//
+//				// We know that the data is sorted alphabetically by default.
+//				proteaseTable.getColumnSortList().push(Prot_ConfidenceP);
+				
+				ListHandler<QueryOutput> mm1ColSortHandler = new ListHandler<QueryOutput>(
+						proteaselist);
+				mm1ColSortHandler.setComparator(Prot_Confidencemm1,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? Integer.toString( o1.protease.total1mm)
+											.compareTo(Integer.toString(o2.protease.total1mm)) : 1;
+								}
+								return -1;
+							}
+						});
+				proteaseTable.addColumnSortHandler(mm1ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				proteaseTable.getColumnSortList().push(Prot_Confidencemm1);
+				
+				ListHandler<QueryOutput> mm2ColSortHandler = new ListHandler<QueryOutput>(
+						proteaselist);
+				mm2ColSortHandler.setComparator(Prot_Confidencemm2,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? Integer.toString( o1.protease.total2mm)
+											.compareTo(Integer.toString(o2.protease.total2mm)) : 1;
+								}
+								return -1;
+							}
+						});
+				proteaseTable.addColumnSortHandler(mm2ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				proteaseTable.getColumnSortList().push(Prot_Confidencemm2);
+				
+				ListHandler<QueryOutput> mm3ColSortHandler = new ListHandler<QueryOutput>(
+						proteaselist);
+				mm3ColSortHandler.setComparator(Prot_Confidencemm3,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? Integer.toString( o1.protease.total3mm)
+											.compareTo(Integer.toString(o2.protease.total3mm)) : 1;
+								}
+								return -1;
+							}
+						});
+				proteaseTable.addColumnSortHandler(mm3ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				proteaseTable.getColumnSortList().push(Prot_Confidencemm3);
+				
+				ListHandler<QueryOutput> totalColSortHandler = new ListHandler<QueryOutput>(
+						proteaselist);
+				totalColSortHandler.setComparator(Prot_TOTAL,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? Integer.toString(o1.protease.totalSPSL + o1.protease.totalSS + o1.protease.total1mm + o1.protease.total2mm + o1.protease.total3mm )
+											.compareTo(Integer.toString(o2.protease.totalSPSL + o2.protease.totalSS + o2.protease.total1mm + o2.protease.total2mm + o2.protease.total3mm)) : 1;
+								}
+								return -1;
+							}
+						});
+				proteaseTable.addColumnSortHandler(totalColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				proteaseTable.getColumnSortList().push(Prot_TOTAL);
+				
+				
+	}
 		
-		CellTable.Resources ptableresources = GWT.create(PTableResources.class);
-		CellTable<QueryOutput> csTable = new CellTable<QueryOutput>(
-				rowscs, ptableresources);
+	private void createCleavageSiteTable(QueryOutput[] CsOutputArray,
+			List<QueryOutput> CsOutputList) {
+		//
+		int rowscs = CsOutputArray.length;
+
+		CellTable.Resources cstableresources = GWT.create(CSTableResources.class);
+		CellTable<QueryOutput> csTable = new CellTable<QueryOutput>(rowscs,
+				cstableresources);
 		csTable.setWidth("1280px");
-//
-//		// Create columns
-//
-		TextColumn<QueryOutput> inputNumberCol = new TextColumn<QueryOutput>() {
+
+		TextColumn<QueryOutput> CS_PepID = new TextColumn<QueryOutput>() {
 			@Override
-			public String getValue(QueryOutput resultbySubstrateData) {
-				String input = resultbySubstrateData.peptide.Pep_Id + " / "
-						+ resultbySubstrateData.cleavagesite.CS_NorCterm;
+			public String getValue(QueryOutput result) {
+				String input = result.peptide.Pep_Id;
 				return input;
 			}
 		};
 
-		Column<QueryOutput, SafeHtml> substrateCol = new Column<QueryOutput, SafeHtml>(
+		TextColumn<QueryOutput> CS_CSNorCterm = new TextColumn<QueryOutput>() {
+			@Override
+			public String getValue(QueryOutput result) {
+				String input = result.cleavagesite.CS_NorCterm;
+				return input;
+			}
+		};
+
+		Column<QueryOutput, SafeHtml> CS_Substrate = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
 			@Override
-			public SafeHtml getValue(QueryOutput resultbySubstrateData) {
-				String substrate = resultbySubstrateData.substrate.S_Symbol;
+			public SafeHtml getValue(QueryOutput result) {
+				String substrate = result.substrate.S_Symbol;
 				return new SafeHtmlBuilder().appendHtmlConstant(
 						"<a href=\"http://www.uniprot.org/uniprot/"
-								+ resultbySubstrateData.substrate.S_Uniprotid
+								+ result.substrate.S_Uniprotid
 								+ "\"target=\"_blank\">" + substrate + "</a>")
 						.toSafeHtml();
 
@@ -1137,67 +1208,43 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		};
 
-//		TextColumn<ResultbySubstrateData> substrateSpecies = new TextColumn<ResultbySubstrateData>() {
-//			@Override
-//			public String getValue(ResultbySubstrateData resultbySubstrateData) {
-//				String species = resultbySubstrateData.substrate.S_Taxon;
-//				return species;
-//			}
-//		};
-
-		Column<QueryOutput, SafeHtml> sequenceCol = new Column<QueryOutput, SafeHtml>(
+		Column<QueryOutput, SafeHtml> CS_PepSeq = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
 			@Override
-			public SafeHtml getValue(QueryOutput resultbySubstrateData) {
+			public SafeHtml getValue(QueryOutput result) {
 				String sequence = null;
-				if (resultbySubstrateData.peptide.Pep_sequence.length() > 16) {
-					if (resultbySubstrateData.cleavagesite.CS_NorCterm.contains("N")) {
-						sequence = "<p><font size=\"1\"><font color= #82a38d><u>"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(0, 3)
-								+ "</u></font>"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(3, 8)
-								+ "[...]"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(resultbySubstrateData.peptide.Pep_sequence
-												.length() - 8) + "</font></p>";
-					}
-					if (resultbySubstrateData.cleavagesite.CS_NorCterm.contains("C")) {
-						int length = resultbySubstrateData.peptide.Pep_sequence
-								.length();
-						sequence = "<p><font size=\"1\">"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(0, 8)
-								+ "[...]"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(length - 8, length - 3)
-								+ "<font color= #82a38d><u>"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(length - 3)
-								+ "</u></font></font></p>";
-					}
+				int length = result.peptide.Pep_sequence.length();
+				if (length > 16) {
+					sequence = result.cleavagesite.CS_NorCterm.contains("N") ? sequence = "<p><font size=\"1\"><font color= #82a38d><u>"
+							+ result.peptide.Pep_sequence.substring(0, 3)
+							+ "</u></font>"
+							+ result.peptide.Pep_sequence.substring(3, 8)
+							+ "[...]"
+							+ result.peptide.Pep_sequence.substring(length - 8)
+							+ "</font></p>"
+							: "<p><font size=\"1\">"
+									+ result.peptide.Pep_sequence.substring(0,
+											8)
+									+ "[...]"
+									+ result.peptide.Pep_sequence.substring(
+											length - 8, length - 3)
+									+ "<font color= #82a38d><u>"
+									+ result.peptide.Pep_sequence
+											.substring(length - 3)
+									+ "</u></font></font></p>";
 				} else {
-					if (resultbySubstrateData.cleavagesite.CS_NorCterm.contains("N")) {
-						sequence = "<p><font size=\"1\"><font color= #82a38d><u>"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(0, 3)
-								+ "</u></font>"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(3) + "</font></p>";
-					}
-					if (resultbySubstrateData.cleavagesite.CS_NorCterm.contains("C")) {
-						int length = resultbySubstrateData.peptide.Pep_sequence
-								.length();
-						sequence = "<p><font size=\"1\">"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(0, length - 3)
-								+ "<font color= #82a38d><u>"
-								+ resultbySubstrateData.peptide.Pep_sequence
-										.substring(length - 3)
-								+ "</u></font></font></p>";
-					}
-
+					sequence = result.cleavagesite.CS_NorCterm.contains("N") ? "<p><font size=\"1\"><font color= #82a38d><u>"
+							+ result.peptide.Pep_sequence.substring(0, 3)
+							+ "</u></font>"
+							+ result.peptide.Pep_sequence.substring(3)
+							+ "</font></p>"
+							: "<p><font size=\"1\">"
+									+ result.peptide.Pep_sequence.substring(0,
+											length - 3)
+									+ "<font color= #82a38d><u>"
+									+ result.peptide.Pep_sequence
+											.substring(length - 3)
+									+ "</u></font></font></p>";
 				}
 				return new SafeHtmlBuilder().appendHtmlConstant(sequence)
 						.toSafeHtml();
@@ -1205,258 +1252,102 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		};
 
-		Column<QueryOutput, SafeHtml> searchedCSCol = new Column<QueryOutput, SafeHtml>(
+		Column<QueryOutput, SafeHtml> CS_CSSeq = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
 			@Override
-			public SafeHtml getValue(QueryOutput resultbySubstrateData) {
-
-				String cleavageSite = resultbySubstrateData.cleavagesite.CS_InputCS;
+			public SafeHtml getValue(QueryOutput result) {
+				String cleavageSite = result.cleavagesite.CS_InputCS;
 				String begin = cleavageSite.substring(0, 4);
 				String end = cleavageSite.substring(4, 8);
 				String cs = null;
-				if (resultbySubstrateData.cleavagesite.CS_NorCterm.contains("N")) {
-					cs = "<p>" + begin + "\u00A6<font color= #82a38d><u>" + end
-							+ "</u></font></p>";
-				}
-				if (resultbySubstrateData.cleavagesite.CS_NorCterm.contains("C")) {
-					cs = "<p><font color= #82a38d><u>" + begin
-							+ "</u></font>\u00A6" + end + "</p>";
-				}
-
+				cs = result.cleavagesite.CS_NorCterm.contains("N") ? "<p>"
+						+ begin + "\u00A6<font color= #82a38d><u>" + end
+						+ "</u></font></p>" : "<p><font color= #82a38d><u>"
+						+ begin + "</u></font>\u00A6" + end + "</p>";
 				return new SafeHtmlBuilder().appendHtmlConstant(cs)
 						.toSafeHtml();
 			}
-
 		};
 
-//		Column<QueryOutput, SafeHtml> foundCSCol = new Column<QueryOutput, SafeHtml>(
-//				new SafeHtmlCell()) {
-//			@Override
-//			public SafeHtml getValue(QueryOutput resultbySubstrateData) {
-//				String splitmultiple[] = resultbySubstrateData.cleavagesite.CS_OutputCS
-//						.split(", ");
-//				String output = "";
-//				SingleCSOutput[] singleoutput = new SingleCSOutput[splitmultiple.length+1];
-//				int k = 1;
-//				String one = null;
-//				String two = null;
-//				String three = null;
-//				String four = null;
-//				String five = null;
-//				String six = null;
-//				String seven = null;
-//				String eight = null;
-//				
-//				String searched = resultbySubstrateData.cleavagesite.CS_InputCS;
-//				String searchedsplit[] = searched.split("");
-//				
-//				if (resultbySubstrateData.cleavagesite.CS_OutputCS.contains(", ")) {
-//				singleoutput[0] = new SingleCSOutput(); 
-//				singleoutput[0].setGap(55);
-//				singleoutput[0].setCs("xxxxxxx");
-//				}
-//				for (int i = 0; i < splitmultiple.length; i++) {					
-//					String found = splitmultiple[i];				
-//					String foundsplit[] = found.split("");
-//					
-//					if (resultbySubstrateData.cleavagesite.CS_OutputCS.contains(", ")) {
-//					singleoutput[k] = new SingleCSOutput(); 
-//					}
-//					
-//					int gap = 0;
-//					
-//					if (searchedsplit[1].equalsIgnoreCase(foundsplit[1])) {
-//						one = searchedsplit[1];
-//					} else {
-//						one = foundsplit[1].toLowerCase();
-//						gap++;
-//					}
-//					if (searchedsplit[2].equalsIgnoreCase(foundsplit[2])) {
-//						two = searchedsplit[2];
-//					} else {
-//						two = foundsplit[2].toLowerCase();
-//						gap++;
-//					}
-//					if (searchedsplit[3].equalsIgnoreCase(foundsplit[3])) {
-//						three = searchedsplit[3];
-//					} else {
-//						three = foundsplit[3].toLowerCase();
-//						gap++;
-//					}
-//					if (searchedsplit[4].equalsIgnoreCase(foundsplit[4])) {
-//						four = searchedsplit[4];
-//					} else {
-//						four = foundsplit[4].toLowerCase();
-//						gap++;
-//					}
-//					if (searchedsplit[5].equalsIgnoreCase(foundsplit[5])) {
-//						five = searchedsplit[5];
-//					} else {
-//						five = foundsplit[5].toLowerCase();
-//						gap++;
-//					}
-//					if (searchedsplit[6].equalsIgnoreCase(foundsplit[6])) {
-//						six = searchedsplit[6];
-//					} else {
-//						six = foundsplit[6].toLowerCase();
-//						gap++;
-//					}
-//					if (searchedsplit[7].equalsIgnoreCase(foundsplit[7])) {
-//						seven = searchedsplit[7];
-//					} else {
-//						seven = foundsplit[7].toLowerCase();
-//						gap++;
-//					}
-//					if (searchedsplit[8].equalsIgnoreCase(foundsplit[8])) {
-//						eight = searchedsplit[8];
-//					} else {
-//						eight = foundsplit[8].toLowerCase();
-//						gap++;
-//					}
-//					
-//					if (resultbySubstrateData.cleavagesite.CS_OutputCS.contains(", ")) {
-//					singleoutput[k].setGap(gap);
-//					int gapi = singleoutput[k].getGap();
-//					int gapimoins = singleoutput[k-1].getGap();
-//					
-//					if (gapi < gapimoins) {
-//						singleoutput[k].setCs(found);
-//					} else {
-//						String before = singleoutput[k-1].getCs();
-//						singleoutput[k].setCs(before);
-//					}
-//					}
-//					k++;
-//				
-//				}
-//			
-//				if (resultbySubstrateData.cleavagesite.CS_OutputCS.contains(", ")) {
-//				String singleoutputfinal = singleoutput[splitmultiple.length].getCs();
-//				String singleoutputfinalsplit[] = singleoutputfinal.split("");
-//				
-//				if (searchedsplit[1].equals(singleoutputfinalsplit[1])) {
-//					one = searchedsplit[1];
-//				} else {
-//					one = singleoutputfinalsplit[1].toLowerCase();
-//				}
-//				if (searchedsplit[2].equals(singleoutputfinalsplit[2])) {
-//					two = searchedsplit[2];
-//				} else {
-//					two = singleoutputfinalsplit[2].toLowerCase();
-//				}
-//				if (searchedsplit[3].equals(singleoutputfinalsplit[3])) {
-//					three = searchedsplit[3];
-//				} else {
-//					three = singleoutputfinalsplit[3].toLowerCase();
-//				}
-//				if (searchedsplit[4].equals(singleoutputfinalsplit[4])) {
-//					four = searchedsplit[4];
-//				} else {
-//					four = singleoutputfinalsplit[4].toLowerCase();
-//				}
-//				if (searchedsplit[5].equals(singleoutputfinalsplit[5])) {
-//					five = searchedsplit[5];
-//				} else {
-//					five = singleoutputfinalsplit[5].toLowerCase();
-//				}
-//				if (searchedsplit[6].equals(singleoutputfinalsplit[6])) {
-//					six = searchedsplit[6];
-//				} else {
-//					six = singleoutputfinalsplit[6].toLowerCase();
-//				}
-//				if (searchedsplit[7].equals(singleoutputfinalsplit[7])) {
-//					seven = searchedsplit[7];
-//				} else {
-//					seven = singleoutputfinalsplit[7].toLowerCase();
-//				}
-//				if (searchedsplit[8].equals(singleoutputfinalsplit[8])) {
-//					eight = searchedsplit[8];
-//				} else {
-//					eight = singleoutputfinalsplit[8].toLowerCase();
-//				}
-//				output = "<p>" + one + two + three + four + ""
-//						+ "\u00A6" + five + six + seven + eight + "</p>";
-//				} else {
-//					output = "<p>" + one + two + three + four + ""
-//							+ "\u00A6" + five + six + seven + eight + "</p>";
-//				}
-//
-//				return new SafeHtmlBuilder().appendHtmlConstant(output)
-//						.toSafeHtml();
-//
-//			}
-//
-//		};
-//
-		Column<QueryOutput, SafeHtml> proteaseCol = new Column<QueryOutput, SafeHtml>(
+		Column<QueryOutput, SafeHtml> CS_Protease = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
 			@Override
-			public SafeHtml getValue(QueryOutput resultbySubstrateData) {
-				String symbol = resultbySubstrateData.protease.P_Symbol
-						.toUpperCase();
+			public SafeHtml getValue(QueryOutput result) {
+				String symbol = result.protease.P_Symbol.toUpperCase();
 				return new SafeHtmlBuilder().appendHtmlConstant(
 						"<a href=\"http://www.uniprot.org/uniprot/"
-								+ resultbySubstrateData.protease.P_Uniprotid
+								+ result.protease.P_Uniprotid
 								+ "\"target=\"_blank\">" + symbol + "</a>")
 						.toSafeHtml();
-
 			}
-
 		};
-//
-//		TextColumn<ResultbySubstrateData> proteaseSpecies = new TextColumn<ResultbySubstrateData>() {
-//			@Override
-//			public String getValue(ResultbySubstrateData resultbySubstrateData) {
-//				String species = resultbySubstrateData.protease.P_Taxon;
-//				species = species.replaceAll("Human", "H");
-//				species = species.replaceAll("Mouse", "M");
-//				species = species.replaceAll("Rat", "R");
-//
-//				return species;
-//			}
-//		};
 
-		Column<QueryOutput, SafeHtml> mismatchCSCol = new Column<QueryOutput, SafeHtml>(
+		Column<QueryOutput, SafeHtml> CS_ConfidenceSPSL = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
 			@Override
-			public SafeHtml getValue(QueryOutput resultbySubstrateData) {
-				String output = "";
-				if (resultbySubstrateData.cleavagesite.CS_OuputMismatch.contains(", ")) {
-					String splitmultiple[] = resultbySubstrateData.cleavagesite.CS_OuputMismatch
-							.split(", ");
-					SingleCSOutput[] singleoutput = new SingleCSOutput[splitmultiple.length+1];
-					singleoutput[0] = new SingleCSOutput();
-					singleoutput[0].setGap(55);
-					int k = 1;
-					for (int i = 0; i < splitmultiple.length; i++) {
-					singleoutput[k] = new SingleCSOutput();
-					String sgap = splitmultiple[i];
-					int igap = Integer.parseInt(sgap);
-					singleoutput[k].setGap(igap);
-					int gapnow = singleoutput[k].getGap();
-					int gapbefore = singleoutput[k-1].getGap();
-					
-					if(gapnow<gapbefore) {
-						singleoutput[k].setGap(igap);
-					}else {
-						singleoutput[k].setGap(gapbefore);
-					}
-										k++;
-				}
-					int ioutput = singleoutput[splitmultiple.length].getGap();
-					output = Integer.toString(ioutput);
-					
-				}else {
-					output = resultbySubstrateData.cleavagesite.CS_OuputMismatch;
-					
-				}
-				
-				String mismatch = output;
-				return new SafeHtmlBuilder().appendHtmlConstant(mismatch)
+			public SafeHtml getValue(QueryOutput result) {
+				String input = result.confidence.equals(SPSL) ? "&#215" : "";
+				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
 						.toSafeHtml();
-
 			}
+		};
 
+		Column<QueryOutput, SafeHtml> CS_ConfidenceSS = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String input = result.confidence.equals(SS) ? "&#215" : "";
+				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+						.toSafeHtml();
+			}
+		};
+
+//		Column<QueryOutput, SafeHtml> CS_ConfidenceHP = new Column<QueryOutput, SafeHtml>(
+//				new SafeHtmlCell()) {
+//			@Override
+//			public SafeHtml getValue(QueryOutput result) {
+//				String input = result.confidence.equals(HP) ? "&#215" : "";
+//				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+//						.toSafeHtml();
+//			}
+//		};
+//
+//		Column<QueryOutput, SafeHtml> CS_ConfidenceP = new Column<QueryOutput, SafeHtml>(
+//				new SafeHtmlCell()) {
+//			@Override
+//			public SafeHtml getValue(QueryOutput result) {
+//				String input = result.confidence.equals(P) ? "&#215" : "";
+//				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+//						.toSafeHtml();
+//			}
+//		};
+		Column<QueryOutput, SafeHtml> CS_Confidencemm1 = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String input = result.confidence.equals(mm1) ? "&#215" : "";
+				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+						.toSafeHtml();
+			}
+		};
+		Column<QueryOutput, SafeHtml> CS_Confidencemm2 = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String input = result.confidence.equals(mm2) ? "&#215" : "";
+				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+						.toSafeHtml();
+			}
+		};
+
+		Column<QueryOutput, SafeHtml> CS_Confidencemm3 = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String input = result.confidence.equals(mm3) ? "&#215" : "";
+				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+						.toSafeHtml();
+			}
 		};
 
 		Column<QueryOutput, SafeHtml> extlinkCol = new Column<QueryOutput, SafeHtml>(
@@ -1473,39 +1364,45 @@ public class PrototypeEntryPoint implements EntryPoint {
 						for (String string : valuesplit) {
 							valuesplit[i].trim();
 							if (valuesplit[i].contains("/show")) {
-								String valuesplitsplit[] = valuesplit[i].split("show/");
+								String valuesplitsplit[] = valuesplit[i]
+										.split("show/");
 								String cutdbentry = valuesplitsplit[1];
-								externallink = externallink + "; " + 
-										"<font size=\"1\"><a href=\"http://cutdb.burnham.org/relation/show/"
-										+ cutdbentry
-										+ "\"target=\"_blank\">" + cutdbentry + "</a></font>";
+								externallink = externallink
+										+ "; "
+										+ "<font size=\"1\"><a href=\"http://cutdb.burnham.org/relation/show/"
+										+ cutdbentry + "\"target=\"_blank\">"
+										+ cutdbentry + "</a></font>";
 							} else if (valuesplit[i].contains("uniprot")) {
-								String valuesplitsplit[] = valuesplit[i].split("uniprot/");
+								String valuesplitsplit[] = valuesplit[i]
+										.split("uniprot/");
 								String unientry = valuesplitsplit[1];
-								externallink = externallink + "; "
+								externallink = externallink
+										+ "; "
 										+ "<font size=\"1\"><a href=\"http://www.uniprot.org/uniprot/"
-										+ unientry
-										+ "\"target=\"_blank\">" + unientry + "</a></font>";
+										+ unientry + "\"target=\"_blank\">"
+										+ unientry + "</a></font>";
 							}
 
 							i++;
 						}
 						externallink = externallink.replaceFirst("; ", "");
-						
+
 					} else {
 						if (external.contains("/show")) {
 							String valuesplitsplit[] = external.split("show/");
 							String cutdbentry = valuesplitsplit[1];
-							externallink =  
-									"<font size=\"1\"><a href=\"http://cutdb.burnham.org/relation/show/"
+							externallink = "<font size=\"1\"><a href=\"http://cutdb.burnham.org/relation/show/"
 									+ cutdbentry
-									+ "\"target=\"_blank\">" + cutdbentry + "</a></font>";
+									+ "\"target=\"_blank\">"
+									+ cutdbentry + "</a></font>";
 						} else if (external.contains("uniprot")) {
-							String valuesplitsplit[] = external.split("uniprot/");
+							String valuesplitsplit[] = external
+									.split("uniprot/");
 							String unientry = valuesplitsplit[1];
 							externallink = "<font size=\"1\"><a href=\"http://www.uniprot.org/uniprot/"
 									+ unientry
-									+ "\"target=\"_blank\">" + unientry + "</a></font>";
+									+ "\"target=\"_blank\">"
+									+ unientry + "</a></font>";
 						}
 					}
 				} else {
@@ -1532,11 +1429,12 @@ public class PrototypeEntryPoint implements EntryPoint {
 						int i = 0;
 						for (String string : valuesplit) {
 							String pmidentry = string.trim();
-							
-							pmid =  pmid + "; " +
-									"<font size=\"1\"><a href=\"http://www.ncbi.nlm.nih.gov/pubmed/"
-									+ pmidentry
-									+ "\"target=\"_blank\">" + pmidentry + "</a></font>";
+
+							pmid = pmid
+									+ "; "
+									+ "<font size=\"1\"><a href=\"http://www.ncbi.nlm.nih.gov/pubmed/"
+									+ pmidentry + "\"target=\"_blank\">"
+									+ pmidentry + "</a></font>";
 						}
 						pmid = pmid.replaceFirst("; ", "");
 
@@ -1557,36 +1455,45 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		};
 
-		inputNumberCol.setSortable(true);
-		substrateCol.setSortable(true);
-		mismatchCSCol.setSortable(true);
-		proteaseCol.setSortable(true);
-		searchedCSCol.setSortable(true);
-//
-		csTable.addColumn(inputNumberCol, "\u25B2ID\u25BC");
-		csTable.addColumn(substrateCol, "\u25B2Substrate\u25BC");
-//		csTable.addColumn(substrateSpecies, "S.Taxon");
-		csTable.addColumn(sequenceCol, "Peptide Sequence");
-//		csTable.addColumn(proteaseSpecies, "P.Taxon");
-		csTable.addColumn(searchedCSCol, "\u25B2Searched CS\u25BC");
-//		csTable.addColumn(foundCSCol, "Found CS");
-		csTable.addColumn(mismatchCSCol, "\u25B2Mism.\u25BC.");
-		csTable.addColumn(proteaseCol, "\u25B2Protease\u25BC");
+		CS_PepID.setSortable(true);
+		CS_Substrate.setSortable(true);
+		CS_Protease.setSortable(true);
+		CS_CSSeq.setSortable(true);
+		CS_ConfidenceSPSL.setSortable(true);
+		CS_ConfidenceSS.setSortable(true);
+//		CS_ConfidenceHP.setSortable(true);
+//		CS_ConfidenceP.setSortable(true);
+		CS_Confidencemm1.setSortable(true);
+		CS_Confidencemm2.setSortable(true);
+		CS_Confidencemm3.setSortable(true);
+		//
+		csTable.addColumn(CS_PepID, "\u25B2ID\u25BC");
+		csTable.addColumn(CS_CSNorCterm, "Term");
+		csTable.addColumn(CS_Substrate, "\u25B2Substrate\u25BC");
+		csTable.addColumn(CS_PepSeq, "Peptide Sequence");
+		csTable.addColumn(CS_CSSeq, "\u25B2Searched\u25BC CS");
+		csTable.addColumn(CS_Protease, "\u25B2Protease\u25BC");
+		csTable.addColumn(CS_ConfidenceSPSL, "\u25B2Confidence\u25BC ++++");
+		csTable.addColumn(CS_ConfidenceSS, "\u25B2Confidence\u25BC +++");
+//		csTable.addColumn(CS_ConfidenceHP, "\u25B2Confidence\u25BC ++");
+//		csTable.addColumn(CS_ConfidenceP, "\u25B2Confidence\u25BC +");
+		csTable.addColumn(CS_Confidencemm1, "\u25B2Confidence\u25BC +-");
+		csTable.addColumn(CS_Confidencemm2, "\u25B2Confidence\u25BC +--");
+		csTable.addColumn(CS_Confidencemm3, "\u25B2Confidence\u25BC +---");
 		csTable.addColumn(extlinkCol, "External Link");
 		csTable.addColumn(pmidCol, "Ref.");
-//
-		csTable.setColumnWidth(inputNumberCol, 10, Unit.EM);
-		csTable.setColumnWidth(substrateCol, 5, Unit.EM);
-		csTable.setColumnWidth(sequenceCol, 10, Unit.EM);
-		csTable.setColumnWidth(searchedCSCol, 10, Unit.EM);
-//		csTable.setColumnWidth(foundCSCol, 15, Unit.EM);
-		csTable.setColumnWidth(proteaseCol, 5, Unit.EM);
-//		csTable.setColumnWidth(extlinkCol, 5, Unit.EM);
-//		csTable.setColumnWidth(pmidCol, 5, Unit.EM);
-//
-		allresult.add(csTable);
+		//
+		csTable.setColumnWidth(CS_PepID, 10, Unit.EM);
+		csTable.setColumnWidth(CS_Substrate, 5, Unit.EM);
+		csTable.setColumnWidth(CS_PepSeq, 10, Unit.EM);
+		csTable.setColumnWidth(CS_CSSeq, 10, Unit.EM);
+		csTable.setColumnWidth(CS_Protease, 5, Unit.EM);
+		// csTable.setColumnWidth(extlinkCol, 5, Unit.EM);
+		// csTable.setColumnWidth(pmidCol, 5, Unit.EM);
+		//
+		CSresult.add(csTable);
 
-//
+		//
 		// Create a data provider.
 		ListDataProvider<QueryOutput> csdataProvider = new ListDataProvider<QueryOutput>();
 
@@ -1597,7 +1504,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		// the
 		// widget
 		List<QueryOutput> cslist = csdataProvider.getList();
-		for (QueryOutput csresultTable : resultcslist) {
+		for (QueryOutput csresultTable : CsOutputList) {
 			cslist.add(csresultTable);
 		}
 
@@ -1605,10 +1512,9 @@ public class PrototypeEntryPoint implements EntryPoint {
 		// java.util.List.
 		ListHandler<QueryOutput> inputNumberColSortHandler = new ListHandler<QueryOutput>(
 				cslist);
-		inputNumberColSortHandler.setComparator(inputNumberCol,
+		inputNumberColSortHandler.setComparator(CS_PepID,
 				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1,
-							QueryOutput o2) {
+					public int compare(QueryOutput o1, QueryOutput o2) {
 						if (o1 == o2) {
 							return 0;
 						}
@@ -1624,16 +1530,15 @@ public class PrototypeEntryPoint implements EntryPoint {
 		csTable.addColumnSortHandler(inputNumberColSortHandler);
 
 		// We know that the data is sorted alphabetically by default.
-		csTable.getColumnSortList().push(inputNumberCol);
+		csTable.getColumnSortList().push(CS_PepID);
 
 		// Add a ColumnSortEvent.ListHandler to connect sorting to the
 		// java.util.List.
 		ListHandler<QueryOutput> substrateColSortHandler = new ListHandler<QueryOutput>(
 				cslist);
-		substrateColSortHandler.setComparator(substrateCol,
+		substrateColSortHandler.setComparator(CS_Substrate,
 				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1,
-							QueryOutput o2) {
+					public int compare(QueryOutput o1, QueryOutput o2) {
 						if (o1 == o2) {
 							return 0;
 						}
@@ -1649,41 +1554,15 @@ public class PrototypeEntryPoint implements EntryPoint {
 		csTable.addColumnSortHandler(substrateColSortHandler);
 
 		// We know that the data is sorted alphabetically by default.
-		csTable.getColumnSortList().push(substrateCol);
-
-		// Add a ColumnSortEvent.ListHandler to connect sorting to the
-		// java.util.List.
-		ListHandler<QueryOutput> mismatchColSortHandler = new ListHandler<QueryOutput>(
-				cslist);
-		mismatchColSortHandler.setComparator(mismatchCSCol,
-				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1,
-							QueryOutput o2) {
-						if (o1 == o2) {
-							return 0;
-						}
-
-						// Compare the symbol columns.
-						if (o1 != null) {
-							return (o2 != null) ? o1.cleavagesite.CS_OuputMismatch
-									.compareTo(o2.cleavagesite.CS_OuputMismatch) : 1;
-						}
-						return -1;
-					}
-				});
-		csTable.addColumnSortHandler(mismatchColSortHandler);
-
-		// We know that the data is sorted alphabetically by default.
-		csTable.getColumnSortList().push(mismatchCSCol);
+		csTable.getColumnSortList().push(CS_Substrate);
 
 		// Add a ColumnSortEvent.ListHandler to connect sorting to the
 		// java.util.List.
 		ListHandler<QueryOutput> proteaseColSortHandler = new ListHandler<QueryOutput>(
 				cslist);
-		proteaseColSortHandler.setComparator(proteaseCol,
+		proteaseColSortHandler.setComparator(CS_Protease,
 				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1,
-							QueryOutput o2) {
+					public int compare(QueryOutput o1, QueryOutput o2) {
 						if (o1 == o2) {
 							return 0;
 						}
@@ -1701,38 +1580,216 @@ public class PrototypeEntryPoint implements EntryPoint {
 		csTable.addColumnSortHandler(proteaseColSortHandler);
 
 		// We know that the data is sorted alphabetically by default.
-		csTable.getColumnSortList().push(proteaseCol);
-		
+		csTable.getColumnSortList().push(CS_Protease);
+
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
+		ListHandler<QueryOutput> searchedCSColSortHandler = new ListHandler<QueryOutput>(
+				cslist);
+		searchedCSColSortHandler.setComparator(CS_CSSeq,
+				new Comparator<QueryOutput>() {
+					public int compare(QueryOutput o1, QueryOutput o2) {
+						if (o1 == o2) {
+							return 0;
+						}
+
+						// Compare the symbol columns.
+						if (o1 != null) {
+							return (o2 != null) ? o1.cleavagesite.CS_InputCS
+									.toUpperCase().compareTo(
+											o2.cleavagesite.CS_InputCS
+													.toUpperCase()) : 1;
+						}
+						return -1;
+					}
+				});
+		csTable.addColumnSortHandler(searchedCSColSortHandler);
+
+		// We know that the data is sorted alphabetically by default.
+		csTable.getColumnSortList().push(CS_CSSeq);
+
 		// Add a ColumnSortEvent.ListHandler to connect sorting to the
 				// java.util.List.
-				ListHandler<QueryOutput> searchedCSColSortHandler = new ListHandler<QueryOutput>(
+				ListHandler<QueryOutput> SPSLColSortHandler = new ListHandler<QueryOutput>(
 						cslist);
-				searchedCSColSortHandler.setComparator(searchedCSCol,
+				SPSLColSortHandler.setComparator(CS_ConfidenceSPSL,
 						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1,
-									QueryOutput o2) {
+							public int compare(QueryOutput o1, QueryOutput o2) {
 								if (o1 == o2) {
 									return 0;
 								}
 
 								// Compare the symbol columns.
 								if (o1 != null) {
-									return (o2 != null) ? o1.cleavagesite.CS_InputCS
+									return (o2 != null) ? o1.SPSL
 											.toUpperCase().compareTo(
-													o2.cleavagesite.CS_InputCS.toUpperCase())
-											: 1;
+													o2.SPSL
+															.toUpperCase()) : 1;
 								}
 								return -1;
 							}
 						});
-				csTable.addColumnSortHandler(searchedCSColSortHandler);
+				csTable.addColumnSortHandler(SPSLColSortHandler);
 
 				// We know that the data is sorted alphabetically by default.
-				csTable.getColumnSortList().push(searchedCSCol);
+				csTable.getColumnSortList().push(CS_ConfidenceSPSL);
 				
-			
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<QueryOutput> SSColSortHandler = new ListHandler<QueryOutput>(
+						cslist);
+				SSColSortHandler.setComparator(CS_ConfidenceSS,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
 
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.SS
+											.toUpperCase().compareTo(
+													o2.SS
+															.toUpperCase()) : 1;
+								}
+								return -1;
+							}
+						});
+				csTable.addColumnSortHandler(SSColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				csTable.getColumnSortList().push(CS_ConfidenceSS);
+				
+//				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+//				// java.util.List.
+//				ListHandler<QueryOutput> HPColSortHandler = new ListHandler<QueryOutput>(
+//						cslist);
+//				HPColSortHandler.setComparator(CS_ConfidenceHP,
+//						new Comparator<QueryOutput>() {
+//							public int compare(QueryOutput o1, QueryOutput o2) {
+//								if (o1 == o2) {
+//									return 0;
+//								}
+//
+//								// Compare the symbol columns.
+//								if (o1 != null) {
+//									return (o2 != null) ? o1.HP
+//											.toUpperCase().compareTo(
+//													o2.HP
+//															.toUpperCase()) : 1;
+//								}
+//								return -1;
+//							}
+//						});
+//				csTable.addColumnSortHandler(HPColSortHandler);
+//
+//				// We know that the data is sorted alphabetically by default.
+//				csTable.getColumnSortList().push(CS_ConfidenceHP);
+//
+//				
+//				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+//				// java.util.List.
+//				ListHandler<QueryOutput> PColSortHandler = new ListHandler<QueryOutput>(
+//						cslist);
+//				PColSortHandler.setComparator(CS_ConfidenceP,
+//						new Comparator<QueryOutput>() {
+//							public int compare(QueryOutput o1, QueryOutput o2) {
+//								if (o1 == o2) {
+//									return 0;
+//								}
+//
+//								// Compare the symbol columns.
+//								if (o1 != null) {
+//									return (o2 != null) ? o1.P
+//											.toUpperCase().compareTo(
+//													o2.P
+//															.toUpperCase()) : 1;
+//								}
+//								return -1;
+//							}
+//						});
+//				csTable.addColumnSortHandler(PColSortHandler);
+//
+//				// We know that the data is sorted alphabetically by default.
+//				csTable.getColumnSortList().push(CS_ConfidenceP);
+				
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<QueryOutput> mm1ColSortHandler = new ListHandler<QueryOutput>(
+						cslist);
+				mm1ColSortHandler.setComparator(CS_Confidencemm1,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.mm1
+											.toUpperCase().compareTo(
+													o2.mm1
+															.toUpperCase()) : 1;
+								}
+								return -1;
+							}
+						});
+				csTable.addColumnSortHandler(mm1ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				csTable.getColumnSortList().push(CS_Confidencemm1);
+				
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<QueryOutput> mm2ColSortHandler = new ListHandler<QueryOutput>(
+						cslist);
+				mm2ColSortHandler.setComparator(CS_Confidencemm2,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.mm2
+											.toUpperCase().compareTo(
+													o2.mm2
+															.toUpperCase()) : 1;
+								}
+								return -1;
+							}
+						});
+				csTable.addColumnSortHandler(mm2ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				csTable.getColumnSortList().push(CS_Confidencemm2);
+				
+				// Add a ColumnSortEvent.ListHandler to connect sorting to the
+				// java.util.List.
+				ListHandler<QueryOutput> mm3ColSortHandler = new ListHandler<QueryOutput>(
+						cslist);
+				mm3ColSortHandler.setComparator(CS_Confidencemm3,
+						new Comparator<QueryOutput>() {
+							public int compare(QueryOutput o1, QueryOutput o2) {
+								if (o1 == o2) {
+									return 0;
+								}
+
+								// Compare the symbol columns.
+								if (o1 != null) {
+									return (o2 != null) ? o1.mm3
+											.toUpperCase().compareTo(
+													o2.mm3
+															.toUpperCase()) : 1;
+								}
+								return -1;
+							}
+						});
+				csTable.addColumnSortHandler(mm3ColSortHandler);
+
+				// We know that the data is sorted alphabetically by default.
+				csTable.getColumnSortList().push(CS_Confidencemm3);
 	}
 
-	
 }

@@ -27,7 +27,7 @@ public class DB_Conn {
 		 Connection conn = null;
 	 
 		 try {
-			 
+//			 
 //			 	String host = "jdbc:mysql://localhost:3406/";
 //		        String dbName = "Proteasix8";
 //		        String usermame = "protuser";

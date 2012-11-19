@@ -1,20 +1,16 @@
-package com.google.gwt.proteasixprototype.client;
-
+package com.google.gwt.proteasixprototype.client.Obsolete;
+import com.google.gwt.proteasixprototype.client.CleavageSiteData;
+import com.google.gwt.proteasixprototype.client.PeptideData;
+import com.google.gwt.proteasixprototype.client.ProteaseData;
+import com.google.gwt.proteasixprototype.client.SubstrateData;
 import com.google.gwt.user.client.rpc.IsSerializable;
+
 public class QueryOutput implements IsSerializable{
 
 	public ProteaseData protease;
 	public PeptideData peptide;
 	public SubstrateData substrate;
 	public CleavageSiteData cleavagesite;
-	public String confidence;
-	public String SPSL;
-	public String SS;
-	public String HP;
-	public String P;
-	public String mm1;
-	public String mm2;
-	public String mm3;
 	
 	public String test;
 

@@ -8,6 +8,7 @@ public class PeptideData implements IsSerializable {
 	public String Pep_sequence;
 	public int Pep_Start;
 	public int Pep_End;
+	public boolean Pep_Seqvalidity;
 	public PeptideData() {
 		
 	}

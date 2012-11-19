@@ -2,6 +2,8 @@ package com.google.gwt.proteasixprototype.client;
 
 import java.util.List;
 
+import com.google.gwt.proteasixprototype.client.QueryInput;
+import com.google.gwt.proteasixprototype.client.QueryOutput;
 import com.google.gwt.user.client.rpc.RemoteService;
 
 public interface DBConnection extends RemoteService {
