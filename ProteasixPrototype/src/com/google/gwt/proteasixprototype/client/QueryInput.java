@@ -10,6 +10,7 @@ public class QueryInput implements IsSerializable {
 	public PeptideData peptide;
 	public SubstrateData substrate;
 	public CleavageSiteData cleavagesite;
+	public boolean onlyNtermcheckbox;
 
 
 public ProteaseData getProtease() {

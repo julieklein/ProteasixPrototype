@@ -180,7 +180,7 @@ public class DB_Protease extends DB_Conn {
 						end = queryInput.peptide.Pep_End;
 						pepsequence = fullsequence.substring(start - 1, end);
 						nTerm = retrieveNCs(start, fullsequence);
-						cTerm = retrieveCCs(end, fullsequence);
+						cTerm = !queryInput.onlyNtermcheckbox ? retrieveCCs(end, fullsequence) : "";
 						sequencevalidity = true;
 					} else {
 						pepsequence = queryInput.peptide.Pep_sequence
@@ -195,7 +195,7 @@ public class DB_Protease extends DB_Conn {
 							pepsequence = fullsequence
 									.substring(start - 1, end);
 							nTerm = retrieveNCs(start, fullsequence);
-							cTerm = retrieveCCs(end, fullsequence);
+							cTerm = !queryInput.onlyNtermcheckbox ? retrieveCCs(end, fullsequence) : "";
 						} else {
 							start = 0;
 							end = 0;
@@ -238,11 +238,13 @@ public class DB_Protease extends DB_Conn {
 					searchRequestN.setCleavagesite(csN);
 					searchRequestN.setPeptide(peptide);
 					searchRequestN.setSubstrate(substrate);
+					queryIn.add(searchRequestN);
+					if (!queryInput.onlyNtermcheckbox) {
 					searchRequestC.setCleavagesite(csC);
 					searchRequestC.setPeptide(peptide);
-					searchRequestC.setSubstrate(substrate);
-					queryIn.add(searchRequestN);
+					searchRequestC.setSubstrate(substrate);		
 					queryIn.add(searchRequestC);
+					}
 				}
 			}
 		}
@@ -318,7 +320,6 @@ public class DB_Protease extends DB_Conn {
 					queryOut.add(out);
 					System.out.println(out.confidence);
 					System.out.println(out.protease.P_Symbol);
-					System.out.println(out.protease.P_Uniprotid);
 				}
 			}
 			result.close();
@@ -351,7 +352,7 @@ public class DB_Protease extends DB_Conn {
 		}
 		int sizeoutprocessed = processedCSOutput.size();
 
-		QueryOutput[] result = new QueryOutput[processedCSOutput.size()];
+		QueryOutput[] result = new QueryOutput[sizeoutprocessed];
 		processedCSOutput.toArray(result);
 		return result;
 	}

@@ -221,10 +221,10 @@ public class PrototypeEntryPoint implements EntryPoint {
 		//
 		
 		pseqvalidity.setHeight("400px");
-		pseqvalidity.setWidth("80%");
+		pseqvalidity.setWidth("100%");
 		pseqvalidity.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		pseqvalidity.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
-		popupseqvalidity.setSize("400px", "400px");
+		popupseqvalidity.setSize("600px", "400px");
 		popupseqvalidity.hide();
 
 		// Set Up the PEPTIDESEARCH Widget
@@ -324,7 +324,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 				// init rpc
 				pepIdArea.setText("P*1\nP*2\nP*3\nP*4");
 				pepUniArea.setText("P02458\nCO1A1_HUMAN\nP02452\nOSTP_HUMAN");
-				pepStartEndArea.setText("575-594\n212-230\n517-539\n33-42");
+				pepStartEndArea.setText("VGPSGAPGEDGRPGPPGPQG\n212-230\n517-539\n33-42");
 			}
 		});
 
@@ -336,6 +336,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 				pepIdArea.setText("");
 				pepUniArea.setText("");
 				pepStartEndArea.setText("");
+				boxNTerm.setValue(false);
 			}
 		});
 
@@ -437,6 +438,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 				QueryInput in = new QueryInput();
 				PeptideData peptide = new PeptideData();
 				SubstrateData substrate = new SubstrateData();
+				in.onlyNtermcheckbox = boxNTerm.getValue() ? true : false;
+				System.out.println(in.onlyNtermcheckbox);
 				substrate.S_Uniprotid = splitSearchUni[i];
 				String splitSearchID[] = pepID.split("\n");
 				peptide.Pep_Id = !pepID.equals("") ? splitSearchID[i] : "ID"
@@ -521,8 +524,10 @@ public class PrototypeEntryPoint implements EntryPoint {
 		
 		if (!queryCSOut[queryCSOut.length-1].peptide.Pep_Seqvalidity) {
 			String sequence = queryCSOut[queryCSOut.length-1].peptide.Pep_sequence;
-			Label lblseqvalidity = new Label(
-					"Oups sorry, the sequence " + sequence + " is not valid!");
+			String symbol = queryCSOut[queryCSOut.length-1].substrate.S_Symbol;
+			String id = queryCSOut[queryCSOut.length-1].substrate.S_Uniprotid;
+			HTML lblseqvalidity = new HTML(
+					"Oups sorry, invalid sequence:<br /><br /> " + sequence + " cannot be found in " + symbol + " (<a href=\"http://www.uniprot.org/uniprot/" + id +  "\"target=\"_blank\">" + id + "</a>" + ")");
 			lblseqvalidity.addStyleName("lResult");
 			pseqvalidity.add(lblseqvalidity);
 			pseqvalidity.add(closeButton);
@@ -551,7 +556,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		int totalpep = splitSearchUni.length;
 
 		// get total number of CS
-		int totalCS = totalpep * 2;
+		int totalCS = boxNTerm.getValue() ? totalpep : totalpep * 2;
 
 		// get predicted unique peptides
 		int predictedpep = 0;
@@ -580,23 +585,27 @@ public class PrototypeEntryPoint implements EntryPoint {
 		float percentretrievedCS = (float) predictedCS / totalCS * 100;
 		
 		gross.add(new HTML("<font><dd>Number of predicted protease/cleavage site associations: <b>" + totalcombi+ "</b></font>"));
-		gross1.add(new HTML(
-		 "<font><dd>Total number of submitted peptides: <b>"
-		 + totalpep
-		 + "</b><br /><dd>Total number of potential cleavage sites: <b>"
-		 + totalCS
-		 + "</b><br /></font"));
-		 
-		 gross2.add(new HTML("<font><dd>Peptides with at least one result: <b>"
-		 + predictedpep
-		 + "</b> (<b>"
-		 + percentretrievedpep
-		 +
-		 "</b>% of total number of submitted peptides)<br /><dd>Cleavage sites with at least one result: <b>"
-		 + predictedCS
-		 + "</b> (<b>"
-		 + percentretrievedCS
-		 + "</b>% of total number of potential cleavage sites)</font>"));
+		
+		String optiononlyN = boxNTerm.getValue() ? "<dd>(only N-term CS)" : "";
+		HTML hgross1 = new HTML(
+				 "<font><dd>Total number of submitted peptides: <b>"
+						 + totalpep
+						 + "</b><br /><dd>Total number of potential cleavage sites: <b>"
+						 + totalCS
+						 + "</b><br />" + optiononlyN + "</font");
+		gross1.add(hgross1);
+		
+		HTML hgross2 = new HTML ("<font><dd>Peptides with at least one result: <b>"
+				 + predictedpep
+				 + "</b> (<b>"
+				 + percentretrievedpep
+				 +
+				 "</b>% of total number of submitted peptides)<br /><dd>Cleavage sites with at least one result: <b>"
+				 + predictedCS
+				 + "</b> (<b>"
+				 + percentretrievedCS
+				 + "</b>% of total number of potential cleavage sites)</font>");
+		 gross2.add(hgross2);
 		 gross.add(gross1);
 		 gross.add(gross2);
 		 gross.addStyleName("pSearchpanel");
