@@ -62,8 +62,6 @@ a,a:visited,a:hover {
 	padding: 3px 5px;
 	text-decoration: none;
 	font-size: small;
-	cursor: pointer;
-	cursor: hand;
 	background: url("images/hborder.png") repeat-x 0px -27px;
 	border: 1px outset #ccc;
 	-webkit-border-radius: 3px !important;
@@ -71,6 +69,14 @@ a,a:visited,a:hover {
 	-ms-border-radius: 3px !important;
 	-o-border-radius: 3px !important;
 	border-radius: 3px !important;
+}
+
+.close{
+	cursor: pointer;
+	cursor: hand;
+	position: relative;
+	top: 100 px;
+	right: 100 px;
 }
 
 .gwt-Button:active {

@@ -8,6 +8,7 @@ import com.google.gwt.cell.client.SafeHtmlCell;
 import com.google.gwt.core.client.EntryPoint;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -102,10 +105,43 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private String mm3 = "3mm";
 
 	private DecoratedTabPanel mainTabPanel = new DecoratedTabPanel();
-	private FlowPanel searchTabPanel = new FlowPanel();
+
 	private FlowPanel aboutTabPanel = new FlowPanel();
-	
-	private HorizontalPanel searchPanelHor = new HorizontalPanel();
+	private VerticalPanel about = new VerticalPanel();
+
+	private FlowPanel searchTabPanel = new FlowPanel();
+	private HorizontalPanel searchPanel = new HorizontalPanel();
+	private VerticalPanel searchbuttonandemailPanel = new VerticalPanel();
+	private HorizontalPanel searchandbuttonPanel = new HorizontalPanel();
+	private VerticalPanel searchPepIdPanel = new VerticalPanel();
+	private TextArea pepIdArea = new TextArea();
+
+	private VerticalPanel searchPepUniPanel = new VerticalPanel();
+	private TextArea pepUniArea = new TextArea();
+
+	private VerticalPanel searchPepStartEndPanel = new VerticalPanel();
+	private TextArea pepStartEndArea = new TextArea();
+
+	private HorizontalPanel emailaddressPanel = new HorizontalPanel();
+	private MultiWordSuggestOracle oracle;
+	private static long forgetMeIn = 1000 * 60 * 60 * 24 * 365 * 30; // 30 years
+	private SuggestBox emailadressTextbox;
+	private Label emailadressLabel = new Label(
+			"Please enter email adress (optional): ");
+	private VerticalPanel checkemailaddressPanel = new VerticalPanel();
+	private CheckBox sendemailChexbox = new CheckBox(
+			"Send result tables as email");
+	private CheckBox rememberemailChexbox = new CheckBox(
+			"Do not remember/forget my email adress");
+
+	private VerticalPanel buttonPanel = new VerticalPanel();
+	private CheckBox boxNTerm = new CheckBox("Only N-term CS");
+	private Button exampleButton = new Button("Try the example!");
+	private Button deleteButton = new Button("Delete");
+	private Button searchButton = new Button("Search");
+
+	private VerticalPanel explanation = new VerticalPanel();
+
 	private VerticalPanel resultPanel = new VerticalPanel();
 	private DecoratedTabPanel resultTabPanel = new DecoratedTabPanel();
 
@@ -117,24 +153,6 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private VerticalPanel gross2 = new VerticalPanel();
 
 	private Label result = new Label("     Result View");
-
-	private VerticalPanel searchPepIdPanel = new VerticalPanel();
-	private TextArea pepIdArea = new TextArea();
-
-	private VerticalPanel searchPepUniPanel = new VerticalPanel();
-	private TextArea pepUniArea = new TextArea();
-
-	private VerticalPanel searchPepStartEndPanel = new VerticalPanel();
-	private TextArea pepStartEndArea = new TextArea();
-
-	private VerticalPanel buttonPanel = new VerticalPanel();
-	private CheckBox boxNTerm = new CheckBox("Only N-term CS");
-	private Button exampleButton = new Button("Try the example!");
-	private Button deleteButton = new Button("Delete");
-	private Button searchButton = new Button("Search");
-
-	private VerticalPanel about = new VerticalPanel();
-	private VerticalPanel explanation = new VerticalPanel();
 
 	private VerticalPanel bottompage = new VerticalPanel();
 
@@ -150,11 +168,23 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private Label lbltoomuch = new Label(
 			"Oups sorry, the search is limitated to 100 peptides!");
 	private Button closeButton = new Button("Close");
+	private Image close = new Image();
 	
+	private DecoratedPopupPanel popupnoinput = new DecoratedPopupPanel();
+	private VerticalPanel pinput = new VerticalPanel();
+	
+	private DecoratedPopupPanel popupemail = new DecoratedPopupPanel();
+	private VerticalPanel pemail = new VerticalPanel();
+
+	private Image close1 = new Image();
+	private DecoratedPopupPanel popupforgetemail = new DecoratedPopupPanel();
+	private VerticalPanel pforgetemail = new VerticalPanel();
 
 	private DecoratedPopupPanel popupseqvalidity = new DecoratedPopupPanel();
-	private VerticalPanel pseqvalidity = new VerticalPanel();	
-	
+	private VerticalPanel pseqvalidity = new VerticalPanel();
+
+	private boolean emailvalidity = false;
+
 	// new css for CSTABLE
 	interface PTableResources extends CellTable.Resources {
 		@Source({ CellTable.Style.DEFAULT_CSS, "ProteaseTable.css" })
@@ -162,13 +192,14 @@ public class PrototypeEntryPoint implements EntryPoint {
 	}
 
 	// new css for CSTABLE
-		interface CSTableResources extends CellTable.Resources {
-			@Source({ CellTable.Style.DEFAULT_CSS, "CleavageSiteTable.css" })
-			CSTableStyle cellTableStyle();
-		}
+	interface CSTableResources extends CellTable.Resources {
+		@Source({ CellTable.Style.DEFAULT_CSS, "CleavageSiteTable.css" })
+		CSTableStyle cellTableStyle();
+	}
 
 	interface PTableStyle extends CellTable.Style {
 	}
+
 	interface CSTableStyle extends CellTable.Style {
 	}
 
@@ -209,23 +240,42 @@ public class PrototypeEntryPoint implements EntryPoint {
 		popup.hide();
 
 		ptoomuch.setHeight("400px");
-		ptoomuch.setWidth("80%");
+		ptoomuch.setWidth("100%");
+		close.setUrl(GWT.getModuleBaseURL() + "Images/1353518245_Close.png");
+		close.addStyleName("close");
+		ptoomuch.add(close);
 		ptoomuch.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		ptoomuch.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 		lbltoomuch.addStyleName("lResult");
 		ptoomuch.add(lbltoomuch);
-		ptoomuch.add(closeButton);
 		popuptoomuch.add(ptoomuch);
 		popuptoomuch.setSize("400px", "400px");
 		popuptoomuch.hide();
 		//
-		
+		pemail.setHeight("400px");
+		pemail.setWidth("100%");
+		pemail.setSize("600px", "400px");
+		popupemail.hide();
+
 		pseqvalidity.setHeight("400px");
 		pseqvalidity.setWidth("100%");
-		pseqvalidity.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-		pseqvalidity.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 		popupseqvalidity.setSize("600px", "400px");
 		popupseqvalidity.hide();
+		
+		pforgetemail.setHeight("200px");
+		pforgetemail.setWidth("100%");
+		popupforgetemail.setSize("300px", "200px");
+		popupforgetemail.hide();
+		
+		pinput.setHeight("200px");
+		pinput.setWidth("100%");
+		popupnoinput.setSize("300px", "200px");
+		popupnoinput.hide();
+
+		about.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
+		about.add(new HTML(
+				"<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches (still taking amino-acid restrictions into account).<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
+		aboutTabPanel.add(about);
 
 		// Set Up the PEPTIDESEARCH Widget
 		searchPepIdPanel.add(new HTML(
@@ -236,14 +286,15 @@ public class PrototypeEntryPoint implements EntryPoint {
 		pepIdArea.setWidth("70px");
 
 		searchPepUniPanel
-				.add(new HTML(
-						"<div align=\"center\">Substrate<br />Uniprot ID or Name</div>"));
+		.add(new HTML(
+				"<div align=\"center\">Substrate<br />Uniprot ID or Name</div>"));
 		searchPepUniPanel.add(pepUniArea);
 		searchPepUniPanel.addStyleName("pSearchpanel");
 		pepUniArea.setHeight("200px");
 		pepUniArea.setWidth("150px");
 
-		searchPepStartEndPanel.add(new HTML(
+		searchPepStartEndPanel
+		.add(new HTML(
 				"<div align=\"center\">Peptide<br />Start-End or Sequence</div>"));
 		searchPepStartEndPanel.add(pepStartEndArea);
 		searchPepStartEndPanel.addStyleName("pSearchpanel");
@@ -260,47 +311,70 @@ public class PrototypeEntryPoint implements EntryPoint {
 		buttonPanel.add(new HTML("<div><br /><div>"));
 		buttonPanel.add(searchButton);
 
-		searchPanelHor.add(searchPepIdPanel);
-		searchPanelHor.add(searchPepUniPanel);
-		searchPanelHor.add(searchPepStartEndPanel);
-		searchPanelHor.add(buttonPanel);
-		about
-				.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
-		about
-				.add(new HTML(
-						"<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches (still taking amino-acid restrictions into account).<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
-		aboutTabPanel.add(about);
-		
-		explanation.setHeight("300px");
-//		explanation.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
-		explanation.add(new HTML("<p><font color=#e6cd78 size = 3><b>Search: </b></font><br/>Enter your peptide list or \"Try the example\" and press search.<br/><font color=#e6cd78 size = 3><b>Result: </b></font><br/>Proteasix will return a list of predicted protease/cleavage site (CS) combinations, with different levels of confidence." +
-				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +++: observed on the <i>same substrate</i>, at the <i>same position</i>." +
-				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++: observed on <i>other substrate(s)</i> or <i>other position(s)</i>." +
-				//UNCOMMENT
-//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++++: already been shown on the <i>same substrate</i>, at the <i>same position</i>." +
-//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +++: already been shown on <i>other substrate(s)</i> or <i>other position(s)</i>." +
-//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++: predicted using MEROPS weight matrix with <i>very high probability</i>." +
-//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +: predicted using MEROPS weight matrix with <i>high probability</i>." +
-//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +-: already been shown with <i>one amino acid mismatch</i>, respecting amino acid substitution constraints and protease restrictions." +
-//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +--: already been shown with <i>two amino acid mismatches</i>, respecting amino acid substitution constraints and protease restrictions." +
-//				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +---: already been shown with <i>three amino acid mismatches</i>, respecting amino acid substitution constraints and protease restrictions.</p>"));
-		
-				//COMMENT
-				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +: observed with <i>one amino acid mismatch</i>, respecting protease restrictions." +
-				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +-: observed with <i>two amino acid mismatches</i>, respecting protease restrictions." +
-				"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +--: observed with <i>three amino acid mismatches</i>, respecting protease restrictions.</p>"));
-		
-		searchPanelHor.add(explanation);
-		searchPanelHor.addStyleName("pSearchpanel");
+		searchandbuttonPanel.add(searchPepIdPanel);
+		searchandbuttonPanel.add(searchPepUniPanel);
+		searchandbuttonPanel.add(searchPepStartEndPanel);
+		searchandbuttonPanel.add(buttonPanel);
 
+		searchbuttonandemailPanel.add(searchandbuttonPanel);
+		checkemailaddressPanel.add(sendemailChexbox);
+		checkemailaddressPanel.add(rememberemailChexbox);
+		oracle = new MultiWordSuggestOracle();
+		emailadressTextbox = new SuggestBox(oracle);
+		updateSuggestBox();
+		emailadressTextbox.addFocusListener(new FocusListener() {
+			@Override
+			public void onLostFocus(Widget sender) {
+			}
+
+			@Override
+			public void onFocus(Widget sender) {
+				emailadressTextbox.showSuggestionList();
+			}
+		});
+		emailaddressPanel.add(emailadressLabel);
+		emailaddressPanel.add(emailadressTextbox);
+		emailaddressPanel.add(checkemailaddressPanel);
+		emailaddressPanel.addStyleName("pSearchpanel");
+		searchbuttonandemailPanel.add(emailaddressPanel);
+		searchPanel.add(searchbuttonandemailPanel);
+
+		explanation.setHeight("300px");
+		// explanation.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
+		explanation
+		.add(new HTML(
+				"<p><font color=#e6cd78 size = 3><b>Search</b> (limited to 100 peptides): </font><br/>Enter your peptide list or \"Try the example\" and press search. The search might take some time, especially for long lists. If you don't want to wait, enter your email adress and check \"Send result tables as email\". As specified, your results will be sent when ready.<br/><font color=#e6cd78 size = 3><b>Result: </b></font><br/>Proteasix will return a list of predicted protease/cleavage site (CS) combinations, with different levels of confidence."
+						+ "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +++: observed on the <i>same substrate</i>, at the <i>same position</i>."
+						+ "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++: observed on <i>other substrate(s)</i> or <i>other position(s)</i>."
+						+
+						// UNCOMMENT
+						// "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++++: already been shown on the <i>same substrate</i>, at the <i>same position</i>."
+						// +
+						// "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +++: already been shown on <i>other substrate(s)</i> or <i>other position(s)</i>."
+						// +
+						// "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence ++: predicted using MEROPS weight matrix with <i>very high probability</i>."
+						// +
+						// "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +: predicted using MEROPS weight matrix with <i>high probability</i>."
+						// +
+						// "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +-: already been shown with <i>one amino acid mismatch</i>, respecting amino acid substitution constraints and protease restrictions."
+						// +
+						// "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +--: already been shown with <i>two amino acid mismatches</i>, respecting amino acid substitution constraints and protease restrictions."
+						// +
+						// "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +---: already been shown with <i>three amino acid mismatches</i>, respecting amino acid substitution constraints and protease restrictions.</p>"));
+
+								// COMMENT
+								"<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +: observed with <i>one amino acid mismatch</i>, respecting protease restrictions."
+								+ "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +-: observed with <i>two amino acid mismatches</i>, respecting protease restrictions."
+								+ "<dd><b><font color=#8EEAD5>&#186</font></b> Confidence +--: observed with <i>three amino acid mismatches</i>, respecting protease restrictions.</p>"));
+
+		searchPanel.add(explanation);
+		searchTabPanel.add(searchPanel);
 		// Set Up the MainPanel
 		mainTabPanel.removeStyleName("gwt-TabPanelBottom");
-	
 
-		searchTabPanel.add(searchPanelHor);
 		searchTabPanel
-				.add(new HTML(
-						"<div><hr style=\"height:10px;;border-width:0;color:#ccc;background-color:#ccc;\"></div>"));
+		.add(new HTML(
+				"<div><hr style=\"height:10px;;border-width:0;color:#ccc;background-color:#ccc;\"></div>"));
 		bottompage.setWidth("1300px");
 		bottompage.setHeight("100px");
 		searchTabPanel.add(bottompage);
@@ -309,13 +383,12 @@ public class PrototypeEntryPoint implements EntryPoint {
 		mainTabPanel.selectTab(0);
 
 		bottompage
-				.add(new HTML(
-						"<div><hr style=\"height:8px;;border-width:0;color:#FFFFFF;background-color:#FFFFFF;\"></div>"));
+		.add(new HTML(
+				"<div><hr style=\"height:8px;;border-width:0;color:#FFFFFF;background-color:#FFFFFF;\"></div>"));
 
 		mainTabPanel.setSize("1300px", "200px");
 		RootPanel rootPanel = RootPanel.get("protease");
 		rootPanel.add(mainTabPanel);
-		// // start the process on PEPTIDESEARCH WIDGET
 
 		// Listen for mouse events on the Add button.
 		exampleButton.addClickHandler(new ClickHandler() {
@@ -324,7 +397,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 				// init rpc
 				pepIdArea.setText("P*1\nP*2\nP*3\nP*4");
 				pepUniArea.setText("P02458\nCO1A1_HUMAN\nP02452\nOSTP_HUMAN");
-				pepStartEndArea.setText("VGPSGAPGEDGRPGPPGPQG\n212-230\n517-539\n33-42");
+				pepStartEndArea
+				.setText("VGPSGAPGEDGRPGPPGPQG\n212-230\n517-539\n33-42");
 			}
 		});
 
@@ -343,29 +417,144 @@ public class PrototypeEntryPoint implements EntryPoint {
 		// Listen for mouse events on the Add button.
 		searchButton.addClickHandler(new ClickHandler() {
 			public void onClick(ClickEvent event) {
-				if (!pepUniArea.getText().equals("") || !pepIdArea.getText().equals("")) {
-				popup.setAnimationEnabled(true);
-				popup.setGlassEnabled(true);
-				popup.show();
-				popup.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
-					public void setPosition(int offsetWidth, int offsetHeight) {
-						int left = (Window.getClientWidth() - offsetWidth) / 3;
-						int top = (Window.getClientHeight() - offsetHeight) / 3;
-						popup.setPopupPosition(left, top);
-					}
-				});
-				// keep search to setup prepared statement
-				// init rpc
-				rpcInit();
-				try {
-					// TODO modify here
-					generateSearchRequest_2();
-
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if (pepUniArea.getText().equals("") || pepIdArea
+								.getText().equals("")) {
+					close.setUrl(GWT.getModuleBaseURL()
+							+ "Images/1353518245_Close.png");
+					close.addStyleName("close");
+					pinput.add(close);
+					HTML lblniinput = new HTML(
+							"Please enter peptides");
+					lblniinput.addStyleName("lResult");
+					pinput
+					.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+					pinput
+					.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+					pinput.add(lblniinput);
+					popupnoinput.add(pinput);
+					popupnoinput.setAnimationEnabled(true);
+					popupnoinput.setGlassEnabled(true);
+					popupnoinput.show();
+					popupnoinput
+					.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+						public void setPosition(int offsetWidth,
+								int offsetHeight) {
+							int left = (Window.getClientWidth() - offsetWidth) / 3;
+							int top = (Window.getClientHeight() - offsetHeight) / 3;
+							popupnoinput
+							.setPopupPosition(left, top);
+						}
+					});
 				}
-				// start the process
+				if (sendemailChexbox.getValue() == true
+						&& !emailadressTextbox.getText().contains("@")) {
+					close1.setUrl(GWT.getModuleBaseURL()
+							+ "Images/1353518245_Close.png");
+					close1.addStyleName("close");
+					pforgetemail.add(close1);
+					HTML lblforgetemail = new HTML(
+							"Please enter a valid email adress");
+					lblforgetemail.addStyleName("lResult");
+					pforgetemail
+					.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+					pforgetemail
+					.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+					pforgetemail.add(lblforgetemail);
+					popupforgetemail.add(pforgetemail);
+					popupforgetemail.setAnimationEnabled(true);
+					popupforgetemail.setGlassEnabled(true);
+					popupforgetemail.show();
+					popupforgetemail
+					.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+						public void setPosition(int offsetWidth,
+								int offsetHeight) {
+							int left = (Window.getClientWidth() - offsetWidth) / 3;
+							int top = (Window.getClientHeight() - offsetHeight) / 3;
+							popupforgetemail
+							.setPopupPosition(left, top);
+						}
+					});
+				} else if (sendemailChexbox.getValue() == true
+						&& emailadressTextbox.getText().contains("@")
+						&& (!pepUniArea.getText().equals("") || !pepIdArea
+								.getText().equals(""))) {
+					emailvalidity = true;
+					String username = emailadressTextbox.getValue();
+					if (username != null && !username.equals("")
+							&& !cookieContains(username)
+							&& rememberemailChexbox.getValue() == false) {
+						addToCookie(username);
+						emailadressTextbox.setValue("");
+						updateSuggestBox();
+					} else if (rememberemailChexbox.getValue() == true) {
+						removeFromCookie(username);
+						updateSuggestBox();
+					}
+					close.setUrl(GWT.getModuleBaseURL()
+							+ "Images/1353518245_Close.png");
+					close.addStyleName("close");
+					pemail.add(close);
+					HTML lblemail = new HTML(
+							"Your results will be send as soon as possible to "
+									+ emailadressTextbox.getText()
+									+ "<br />Thank you for your search!");
+					lblemail.addStyleName("lResult");
+					pemail.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+					pemail.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
+					pemail.add(lblemail);
+					popupemail.add(pemail);
+					popupemail.setAnimationEnabled(true);
+					popupemail.setGlassEnabled(true);
+					popupemail.show();
+					popupemail
+					.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+						public void setPosition(int offsetWidth,
+								int offsetHeight) {
+							int left = (Window.getClientWidth() - offsetWidth) / 3;
+							int top = (Window.getClientHeight() - offsetHeight) / 3;
+							popupemail.setPopupPosition(left, top);
+						}
+					});
+					// keep search to setup prepared statement
+					// init rpc
+					rpcInit();
+					try {
+						// TODO modify here
+						generateSearchRequest_2();
+
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					// start the process
+				}
+
+				else if (sendemailChexbox.getValue() == false
+						&& (!pepUniArea.getText().equals("") || !pepIdArea
+								.getText().equals(""))) {
+					popup.setAnimationEnabled(true);
+					popup.setGlassEnabled(true);
+					popup.show();
+					popup.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+						public void setPosition(int offsetWidth,
+								int offsetHeight) {
+							int left = (Window.getClientWidth() - offsetWidth) / 3;
+							int top = (Window.getClientHeight() - offsetHeight) / 3;
+							popup.setPopupPosition(left, top);
+						}
+					});
+					// keep search to setup prepared statement
+					// init rpc
+					rpcInit();
+					try {
+						// TODO modify here
+						generateSearchRequest_2();
+
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					// start the process
 				}
 			}
 		});
@@ -374,9 +563,48 @@ public class PrototypeEntryPoint implements EntryPoint {
 			public void onClick(ClickEvent event) {
 				// keep search to setup prepared statement
 				// init rpc
+				ptoomuch.clear();
+				popuptoomuch.clear();
 				popuptoomuch.hide();
+				pseqvalidity.clear();
+				popupseqvalidity.clear();
 				popupseqvalidity.hide();
+				pemail.clear();
+				popupemail.clear();
+				popupemail.hide();
+				pinput.clear();
+				popupnoinput.clear();
+				popupnoinput.hide();
+			}
+		});
 
+		close.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				// keep search to setup prepared statement
+				// init rpc
+				ptoomuch.clear();
+				popuptoomuch.clear();
+				popuptoomuch.hide();
+				pseqvalidity.clear();
+				popupseqvalidity.clear();
+				popupseqvalidity.hide();
+				pemail.clear();
+				popupemail.clear();
+				popupemail.hide();
+				pinput.clear();
+				popupnoinput.clear();
+				popupnoinput.hide();
+			}
+		});
+
+		close1.addClickHandler(new ClickHandler() {
+			public void onClick(ClickEvent event) {
+				// keep search to setup prepared statement
+				// init rpc
+				pforgetemail.clear();
+				popupforgetemail.clear();
+				popupforgetemail.hide();
+				emailadressTextbox.setFocus(true);
 			}
 		});
 
@@ -422,14 +650,14 @@ public class PrototypeEntryPoint implements EntryPoint {
 			popuptoomuch.setGlassEnabled(true);
 			popuptoomuch.show();
 			popuptoomuch
-					.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
-						public void setPosition(int offsetWidth,
-								int offsetHeight) {
-							int left = (Window.getClientWidth() - offsetWidth) / 3;
-							int top = (Window.getClientHeight() - offsetHeight) / 3;
-							popuptoomuch.setPopupPosition(left, top);
-						}
-					});
+			.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+				public void setPosition(int offsetWidth,
+						int offsetHeight) {
+					int left = (Window.getClientWidth() - offsetWidth) / 3;
+					int top = (Window.getClientHeight() - offsetHeight) / 3;
+					popuptoomuch.setPopupPosition(left, top);
+				}
+			});
 		} else {
 
 			LinkedList<QueryInput> input = new LinkedList<QueryInput>();
@@ -438,7 +666,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 				QueryInput in = new QueryInput();
 				PeptideData peptide = new PeptideData();
 				SubstrateData substrate = new SubstrateData();
-				in.onlyNtermcheckbox = boxNTerm.getValue() ? true : false;
+				in.onlyNtermcheckbox = boxNTerm.getValue() == true ? true
+						: false;
 				System.out.println(in.onlyNtermcheckbox);
 				substrate.S_Uniprotid = splitSearchUni[i];
 				String splitSearchID[] = pepID.split("\n");
@@ -466,11 +695,16 @@ public class PrototypeEntryPoint implements EntryPoint {
 			}
 			QueryInput[] queryIn = new QueryInput[splitSearchUni.length];
 			input.toArray(queryIn);
-			getResultbyPeptideInfo_2(queryIn);
+			if (sendemailChexbox.getValue() == false) {
+				getResultHTML(queryIn);
+			} else if (emailvalidity = true) {
+				emailvalidity = false;
+				getResultbyEmail(queryIn);
+			}
 		}
 	}
 
-	private void getResultbyPeptideInfo_2(QueryInput[] queryIn) {
+	private void getResultHTML(QueryInput[] queryIn) {
 
 		// empty if anything is there already
 		Proteaseresult.clear();
@@ -507,6 +741,82 @@ public class PrototypeEntryPoint implements EntryPoint {
 		callProvider.getResultInfo(queryIn, callback);
 	}
 
+	private void getResultbyEmail(QueryInput[] queryIn) {
+
+		// empty if anything is there already
+		Proteaseresult.clear();
+		CSresult.clear();
+		gross1.clear();
+		gross2.clear();
+		gross.clear();
+		resultTabPanel.clear();
+		resultPanel.clear();
+		searchTabPanel.remove(bottompage);
+		searchTabPanel.add(resultPanel);
+		searchTabPanel.add(bottompage);
+
+		AsyncCallback callback = new AsyncCallback() {
+
+			// fail
+			public void onFailure(Throwable ex) {
+				RootPanel.get().add(new HTML(ex.toString()));
+			}
+
+			// success
+			public void onSuccess(Object result) {
+
+				QueryOutput[] queryOut = (QueryOutput[]) result;
+				// TODO modify here
+				// draw PEPTIDE info
+				try {
+					sendEmail(queryOut);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+
+		// remote procedure call to the server to get the bible info
+		callProvider.getResultInfo(queryIn, callback);
+	}
+
+	private void sendEmail(QueryOutput[] queryCSOut) throws IOException {
+		String subject = "Proteasix results";
+		String body = "<p>Dear user, <br />Please find enclosed your results. The ProteaseView file contains a summary of observed or predicted"
+				+ " cleavage site associations for each protease. The CleavageSiteView file contains the full list of "
+				+ "observed or predicted protease/cleavage site associations.<br /><br />Enjoy your results!<br /><br/>The Proteasix team.<br /><br />"
+				+ "This is an automatic email. Please do not reply.";
+
+		// Initialize the service proxy.
+		if (callProvider == null) {
+			callProvider = GWT.create(DBConnection.class);
+		}
+
+		// Set up the callback object.
+		AsyncCallback callback = new AsyncCallback() {
+			public void onFailure(Throwable caught) {
+				Window.alert("failure");
+				Window.alert(caught.getMessage());
+			}
+
+			public void onSuccess(Void result) {
+				Window.alert("Email sent");
+			}
+
+			@Override
+			public void onSuccess(Object result) {
+				// TODO Auto-generated method stub
+
+			}
+		};
+		if (emailadressTextbox.getText().contains("@")) {
+			String to = emailadressTextbox.getText();
+			// Make the call to the stock price service.
+			callProvider.runMailer(to, subject, body, queryCSOut, callback);
+		}
+	}
+
 	private void drawResultbyPeptideInfo_2(QueryOutput[] queryCSOut) {
 
 		// if null nothing to do, then exit
@@ -521,201 +831,215 @@ public class PrototypeEntryPoint implements EntryPoint {
 		resultTabPanel.add(CSresult, "Cleavage Site View");
 		resultTabPanel.selectTab(0);
 		popup.hide();
-		
-		if (!queryCSOut[queryCSOut.length-1].peptide.Pep_Seqvalidity) {
-			String sequence = queryCSOut[queryCSOut.length-1].peptide.Pep_sequence;
-			String symbol = queryCSOut[queryCSOut.length-1].substrate.S_Symbol;
-			String id = queryCSOut[queryCSOut.length-1].substrate.S_Uniprotid;
+
+		if (!queryCSOut[queryCSOut.length - 1].peptide.Pep_Seqvalidity) {
+			String sequence = queryCSOut[queryCSOut.length - 1].peptide.Pep_sequence;
+			String symbol = queryCSOut[queryCSOut.length - 1].substrate.S_Symbol;
+			String id = queryCSOut[queryCSOut.length - 1].substrate.S_Uniprotid;
 			HTML lblseqvalidity = new HTML(
-					"Oups sorry, invalid sequence:<br /><br /> " + sequence + " cannot be found in " + symbol + " (<a href=\"http://www.uniprot.org/uniprot/" + id +  "\"target=\"_blank\">" + id + "</a>" + ")");
+					"Oups sorry, invalid sequence:<br /><br /> " + sequence
+					+ " cannot be found in " + symbol
+					+ " (<a href=\"http://www.uniprot.org/uniprot/"
+					+ id + "\"target=\"_blank\">" + id + "</a>" + ")");
 			lblseqvalidity.addStyleName("lResult");
-			pseqvalidity.add(lblseqvalidity);
-			pseqvalidity.add(closeButton);
+			close.setUrl(GWT.getModuleBaseURL() + "Images/1353511503_Close.png");
+			close.addStyleName("close");
+			pseqvalidity.add(close);
+			pseqvalidity
+			.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+			pseqvalidity
+			.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 			popupseqvalidity.add(pseqvalidity);
+			pseqvalidity.add(lblseqvalidity);
 			popupseqvalidity.setAnimationEnabled(true);
 			popupseqvalidity.setGlassEnabled(true);
 			popupseqvalidity.show();
 			popupseqvalidity
-					.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
-						public void setPosition(int offsetWidth,
-								int offsetHeight) {
-							int left = (Window.getClientWidth() - offsetWidth) / 3;
-							int top = (Window.getClientHeight() - offsetHeight) / 3;
-							popupseqvalidity.setPopupPosition(left, top);
-						}
-					});
-		} else {
-		List<QueryOutput> CSOutput = Arrays.asList(queryCSOut);
-		
-		// get total number of protease/CS combination
-		int totalcombi = queryCSOut.length;
-		
-		// get total number of peptides
-		String subUni = pepUniArea.getText().toUpperCase().trim();
-		String splitSearchUni[] = subUni.split("\n");
-		int totalpep = splitSearchUni.length;
-
-		// get total number of CS
-		int totalCS = boxNTerm.getValue() ? totalpep : totalpep * 2;
-
-		// get predicted unique peptides
-		int predictedpep = 0;
-		HashMap<String, String> uniquepep = new HashMap<String, String>();
-		for (QueryOutput string : queryCSOut) {
-			String key = string.peptide.Pep_Id;
-			if (!uniquepep.containsKey(key)) {
-				String value = null;
-				uniquepep.put(key, value);
-			}
-		}
-		predictedpep = uniquepep.size();		
-		float percentretrievedpep = (float) predictedpep / totalpep * 100;
-		
-		// get predicted unique CS
-		int predictedCS = 0;
-		HashMap<String, String> uniquecs = new HashMap<String, String>();
-		for (QueryOutput string : queryCSOut) {
-			String key = string.peptide.Pep_Id + string.cleavagesite.CS_NorCterm;
-			if (!uniquecs.containsKey(key)) {
-				String value = null;
-				uniquecs.put(key, value);
-			}
-		}
-		predictedCS = uniquecs.size();
-		float percentretrievedCS = (float) predictedCS / totalCS * 100;
-		
-		gross.add(new HTML("<font><dd>Number of predicted protease/cleavage site associations: <b>" + totalcombi+ "</b></font>"));
-		
-		String optiononlyN = boxNTerm.getValue() ? "<dd>(only N-term CS)" : "";
-		HTML hgross1 = new HTML(
-				 "<font><dd>Total number of submitted peptides: <b>"
-						 + totalpep
-						 + "</b><br /><dd>Total number of potential cleavage sites: <b>"
-						 + totalCS
-						 + "</b><br />" + optiononlyN + "</font");
-		gross1.add(hgross1);
-		
-		HTML hgross2 = new HTML ("<font><dd>Peptides with at least one result: <b>"
-				 + predictedpep
-				 + "</b> (<b>"
-				 + percentretrievedpep
-				 +
-				 "</b>% of total number of submitted peptides)<br /><dd>Cleavage sites with at least one result: <b>"
-				 + predictedCS
-				 + "</b> (<b>"
-				 + percentretrievedCS
-				 + "</b>% of total number of potential cleavage sites)</font>");
-		 gross2.add(hgross2);
-		 gross.add(gross1);
-		 gross.add(gross2);
-		 gross.addStyleName("pSearchpanel");
-		 resultPanel.add(gross);
-		 resultPanel.add(resultTabPanel);
-		 
-		Map<String, List<Set<String>>> processedProteasehmap = new HashMap<String, List<Set<String>>>();
-		for (QueryOutput queryOutput : queryCSOut) {
-			String key = queryOutput.protease.P_Uniprotid;
-			if (!processedProteasehmap.containsKey(key)) {
-				List value = new ArrayList<Set<String>>();
-				for (int j = 0; j < 10; j++) {
-					value.add(new HashSet<String>());
+			.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+				public void setPosition(int offsetWidth,
+						int offsetHeight) {
+					int left = (Window.getClientWidth() - offsetWidth) / 3;
+					int top = (Window.getClientHeight() - offsetHeight) / 3;
+					popupseqvalidity.setPopupPosition(left, top);
 				}
-				processedProteasehmap.put(key, value);
+			});
+		} else {
+			List<QueryOutput> CSOutput = Arrays.asList(queryCSOut);
+
+			// get total number of protease/CS combination
+			int totalcombi = queryCSOut.length;
+
+			// get total number of peptides
+			String subUni = pepUniArea.getText().toUpperCase().trim();
+			String splitSearchUni[] = subUni.split("\n");
+			int totalpep = splitSearchUni.length;
+
+			// get total number of CS
+			int totalCS = boxNTerm.getValue() ? totalpep : totalpep * 2;
+
+			// get predicted unique peptides
+			int predictedpep = 0;
+			HashMap<String, String> uniquepep = new HashMap<String, String>();
+			for (QueryOutput string : queryCSOut) {
+				String key = string.peptide.Pep_Id;
+				if (!uniquepep.containsKey(key)) {
+					String value = null;
+					uniquepep.put(key, value);
+				}
 			}
-			processedProteasehmap.get(key).get(0)
-					.add(queryOutput.protease.P_Symbol);
-			processedProteasehmap.get(key).get(1)
-					.add(queryOutput.protease.P_Uniprotid);
-			if (queryOutput.confidence.equals(SPSL))
-				processedProteasehmap
-						.get(key)
-						.get(2)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(SS))
-				processedProteasehmap
-						.get(key)
-						.get(3)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(HP))
-				processedProteasehmap
-						.get(key)
-						.get(4)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(P))
-				processedProteasehmap
-						.get(key)
-						.get(5)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(mm1))
-				processedProteasehmap
-						.get(key)
-						.get(6)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(mm2))
-				processedProteasehmap
-						.get(key)
-						.get(7)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(mm3))
-				processedProteasehmap
-						.get(key)
-						.get(8)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			processedProteasehmap.get(key).get(9).add(queryOutput.protease.P_OMIM);
-		}
+			predictedpep = uniquepep.size();
+			float percentretrievedpep = (float) predictedpep / totalpep * 100;
 
-		Iterator iterator = processedProteasehmap.values().iterator();
-		LinkedList<QueryOutput> processedProteaseOutput = new LinkedList<QueryOutput>();
-		while (iterator.hasNext()) {
-			int iSPSL = 0;
-			int iSS = 0;
-			int iHP = 0;
-			int iP = 0;
-			int i1mm = 0;
-			int i2mm = 0;
-			int i3mm = 0;
-			QueryOutput processedProtout = new QueryOutput();
-			ProteaseData protease = new ProteaseData();
-			String values = iterator.next().toString();
-			String splitarray[] = values.split("\\], \\[");
-			String protsymbol = splitarray[0];
-			protsymbol = protsymbol.replaceAll("\\[", "");
-			protease.P_Symbol = protsymbol;
-			protease.P_Uniprotid = splitarray[1];
-			String resultSPSL = splitarray[2];
-			protease.totalSPSL = getTotalProteaseConfidence(iSPSL, resultSPSL);
-			String resultSS = splitarray[3];
-			protease.totalSS = getTotalProteaseConfidence(iSS, resultSS);
-			String resultHP = splitarray[4];
-			protease.totalHP = getTotalProteaseConfidence(iHP, resultHP);
-			String resultP = splitarray[5];
-			protease.totalP = getTotalProteaseConfidence(iP, resultP);
-			String resultmm1 = splitarray[6];
-			protease.total1mm = getTotalProteaseConfidence(i1mm, resultmm1);
-			String resultmm2 = splitarray[7];
-			protease.total2mm = getTotalProteaseConfidence(i2mm, resultmm2);
-			String resultmm3 = splitarray[8];
-			protease.total3mm = getTotalProteaseConfidence(i3mm, resultmm3);
-			String omim = splitarray[9];
-			omim = omim.replaceAll("\\]", "");
-			protease.P_OMIM = omim;
-			processedProtout.setProtease(protease);
-			processedProteaseOutput.add(processedProtout);
-		}
+			// get predicted unique CS
+			int predictedCS = 0;
+			HashMap<String, String> uniquecs = new HashMap<String, String>();
+			for (QueryOutput string : queryCSOut) {
+				String key = string.peptide.Pep_Id
+						+ string.cleavagesite.CS_NorCterm;
+				if (!uniquecs.containsKey(key)) {
+					String value = null;
+					uniquecs.put(key, value);
+				}
+			}
+			predictedCS = uniquecs.size();
+			float percentretrievedCS = (float) predictedCS / totalCS * 100;
 
-		QueryOutput[] queryProtOut = new QueryOutput[processedProteaseOutput
-				.size()];
-		processedProteaseOutput.toArray(queryProtOut);
+			gross.add(new HTML(
+					"<font><dd>Number of predicted protease/cleavage site associations: <b>"
+							+ totalcombi + "</b></font>"));
 
-		createCleavageSiteTable(queryCSOut, CSOutput);
-		createProteaseTable(queryProtOut, processedProteaseOutput);
+			String optiononlyN = boxNTerm.getValue() ? "<dd>(only N-term CS)"
+					: "";
+			HTML hgross1 = new HTML(
+					"<font><dd>Total number of submitted peptides: <b>"
+							+ totalpep
+							+ "</b><br /><dd>Total number of potential cleavage sites: <b>"
+							+ totalCS + "</b><br />" + optiononlyN + "</font");
+			gross1.add(hgross1);
+
+			HTML hgross2 = new HTML(
+					"<font><dd>Peptides with at least one result: <b>"
+							+ predictedpep
+							+ "</b> (<b>"
+							+ percentretrievedpep
+							+ "</b>% of total number of submitted peptides)<br /><dd>Cleavage sites with at least one result: <b>"
+							+ predictedCS
+							+ "</b> (<b>"
+							+ percentretrievedCS
+							+ "</b>% of total number of potential cleavage sites)</font>");
+			gross2.add(hgross2);
+			gross.add(gross1);
+			gross.add(gross2);
+			gross.addStyleName("pSearchpanel");
+			resultPanel.add(gross);
+			resultPanel.add(resultTabPanel);
+
+			Map<String, List<Set<String>>> processedProteasehmap = new HashMap<String, List<Set<String>>>();
+			for (QueryOutput queryOutput : queryCSOut) {
+				String key = queryOutput.protease.P_Uniprotid;
+				if (!processedProteasehmap.containsKey(key)) {
+					List value = new ArrayList<Set<String>>();
+					for (int j = 0; j < 10; j++) {
+						value.add(new HashSet<String>());
+					}
+					processedProteasehmap.put(key, value);
+				}
+				processedProteasehmap.get(key).get(0)
+				.add(queryOutput.protease.P_Symbol);
+				processedProteasehmap.get(key).get(1)
+				.add(queryOutput.protease.P_Uniprotid);
+				if (queryOutput.confidence.equals(SPSL))
+					processedProteasehmap
+					.get(key)
+					.get(2)
+					.add(queryOutput.peptide.Pep_Id
+							+ queryOutput.cleavagesite.CS_NorCterm);
+				else if (queryOutput.confidence.equals(SS))
+					processedProteasehmap
+					.get(key)
+					.get(3)
+					.add(queryOutput.peptide.Pep_Id
+							+ queryOutput.cleavagesite.CS_NorCterm);
+				else if (queryOutput.confidence.equals(HP))
+					processedProteasehmap
+					.get(key)
+					.get(4)
+					.add(queryOutput.peptide.Pep_Id
+							+ queryOutput.cleavagesite.CS_NorCterm);
+				else if (queryOutput.confidence.equals(P))
+					processedProteasehmap
+					.get(key)
+					.get(5)
+					.add(queryOutput.peptide.Pep_Id
+							+ queryOutput.cleavagesite.CS_NorCterm);
+				else if (queryOutput.confidence.equals(mm1))
+					processedProteasehmap
+					.get(key)
+					.get(6)
+					.add(queryOutput.peptide.Pep_Id
+							+ queryOutput.cleavagesite.CS_NorCterm);
+				else if (queryOutput.confidence.equals(mm2))
+					processedProteasehmap
+					.get(key)
+					.get(7)
+					.add(queryOutput.peptide.Pep_Id
+							+ queryOutput.cleavagesite.CS_NorCterm);
+				else if (queryOutput.confidence.equals(mm3))
+					processedProteasehmap
+					.get(key)
+					.get(8)
+					.add(queryOutput.peptide.Pep_Id
+							+ queryOutput.cleavagesite.CS_NorCterm);
+				processedProteasehmap.get(key).get(9)
+				.add(queryOutput.protease.P_OMIM);
+			}
+
+			Iterator iterator = processedProteasehmap.values().iterator();
+			LinkedList<QueryOutput> processedProteaseOutput = new LinkedList<QueryOutput>();
+			while (iterator.hasNext()) {
+				int iSPSL = 0;
+				int iSS = 0;
+				int iHP = 0;
+				int iP = 0;
+				int i1mm = 0;
+				int i2mm = 0;
+				int i3mm = 0;
+				QueryOutput processedProtout = new QueryOutput();
+				ProteaseData protease = new ProteaseData();
+				String values = iterator.next().toString();
+				String splitarray[] = values.split("\\], \\[");
+				String protsymbol = splitarray[0];
+				protsymbol = protsymbol.replaceAll("\\[", "");
+				protease.P_Symbol = protsymbol;
+				protease.P_Uniprotid = splitarray[1];
+				String resultSPSL = splitarray[2];
+				protease.totalSPSL = getTotalProteaseConfidence(iSPSL,
+						resultSPSL);
+				String resultSS = splitarray[3];
+				protease.totalSS = getTotalProteaseConfidence(iSS, resultSS);
+				String resultHP = splitarray[4];
+				protease.totalHP = getTotalProteaseConfidence(iHP, resultHP);
+				String resultP = splitarray[5];
+				protease.totalP = getTotalProteaseConfidence(iP, resultP);
+				String resultmm1 = splitarray[6];
+				protease.total1mm = getTotalProteaseConfidence(i1mm, resultmm1);
+				String resultmm2 = splitarray[7];
+				protease.total2mm = getTotalProteaseConfidence(i2mm, resultmm2);
+				String resultmm3 = splitarray[8];
+				protease.total3mm = getTotalProteaseConfidence(i3mm, resultmm3);
+				String omim = splitarray[9];
+				omim = omim.replaceAll("\\]", "");
+				protease.P_OMIM = omim;
+				processedProtout.setProtease(protease);
+				processedProteaseOutput.add(processedProtout);
+			}
+
+			QueryOutput[] queryProtOut = new QueryOutput[processedProteaseOutput
+			                                             .size()];
+			processedProteaseOutput.toArray(queryProtOut);
+
+			createCleavageSiteTable(queryCSOut, CSOutput);
+			createProteaseTable(queryProtOut, processedProteaseOutput);
 		}
 
 	}
@@ -729,459 +1053,553 @@ public class PrototypeEntryPoint implements EntryPoint {
 		return iConfidence;
 	}
 
-	private void createProteaseTable(QueryOutput[] ProteaseOutputArray, LinkedList<QueryOutput> ProteaseOutputList) {
+	private void updateSuggestBox() {
+		oracle.clear();
+		List<String> usernames = getUsernames();
+		oracle.setDefaultSuggestionsFromText(usernames);
+		for (String username : usernames) {
+			oracle.add(username);
+		}
+	}
+
+	private List<String> getUsernames() {
+		ArrayList<String> usernames = new ArrayList<String>();
+		String users = Cookies.getCookie("usernames");
+		if (users != null) {
+			for (String username : users.split(":")) {
+				usernames.add(username);
+			}
+		}
+		return usernames;
+	}
+
+	private boolean cookieContains(String s) {
+		boolean contains = false;
+		String users = Cookies.getCookie("usernames");
+		if (users != null) {
+			for (String username : users.split(":")) {
+				if (username.equals(s))
+					contains = true;
+			}
+		}
+		return contains;
+	}
+
+	private void addToCookie(String username) {
+		String users = Cookies.getCookie("usernames");
+		if (users != null)
+			Cookies.setCookie("usernames", users + ":" + username, new Date(
+					new Date().getTime() + forgetMeIn));
+		else
+			Cookies.setCookie("usernames", username,
+					new Date(new Date().getTime() + forgetMeIn));
+	}
+
+	private void removeFromCookie(String username) {
+		String users = Cookies.getCookie("usernames");
+		if (users != null)
+			Cookies.removeCookie("usernames", username);
+		else
+			Cookies.removeCookie("usernames", username);
+
+	}
+
+	private void createProteaseTable(QueryOutput[] ProteaseOutputArray,
+			LinkedList<QueryOutput> ProteaseOutputList) {
 		int rowsprot = ProteaseOutputArray.length;
-		
-		 CellTable.Resources ptableresources = GWT.create(PTableResources.class);
-		 CellTable<QueryOutput> proteaseTable = new CellTable<QueryOutput>(
-				 rowsprot, ptableresources);
-		 proteaseTable.setWidth("1280px");
-		 
-		 Column<QueryOutput, SafeHtml> Prot_Protease = new Column<QueryOutput, SafeHtml>(
-					new SafeHtmlCell()) {
-				@Override
-				public SafeHtml getValue(QueryOutput result) {
-					String protease = result.protease.P_Symbol;
-					return new SafeHtmlBuilder().appendHtmlConstant(
-							"<a href=\"http://www.uniprot.org/uniprot/"
-									+ result.protease.P_Uniprotid
-									+ "\"target=\"_blank\">" + protease + "</a>")
-							.toSafeHtml();
-				}
-			};
-			
-			Column<QueryOutput, SafeHtml> Prot_ConfidenceSPSL =new Column<QueryOutput, SafeHtml>(
-					new SafeHtmlCell()) {
+
+		CellTable.Resources ptableresources = GWT.create(PTableResources.class);
+		CellTable<QueryOutput> proteaseTable = new CellTable<QueryOutput>(
+				rowsprot, ptableresources);
+		proteaseTable.setWidth("1280px");
+
+		Column<QueryOutput, SafeHtml> Prot_Protease = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String protease = result.protease.P_Symbol;
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<a href=\"http://www.uniprot.org/uniprot/"
+								+ result.protease.P_Uniprotid
+								+ "\"target=\"_blank\">" + protease + "</a>")
+								.toSafeHtml();
+			}
+		};
+
+		Column<QueryOutput, SafeHtml> Prot_ConfidenceSPSL = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				int input = result.protease.totalSPSL;
 				String color = "white";
-				if (input>0 && input < 3)
+				if (input > 0 && input < 3)
 					color = "#E0F8EC";
-				if (input>=3 && input <10)
+				if (input >= 3 && input < 10)
 					color = "#A9F5D0";
-				if (input>=10 && input <20)
+				if (input >= 10 && input < 20)
 					color = "#58FAAC";
-				if (input>=20 && input <50)
+				if (input >= 20 && input < 50)
 					color = "#00FF80";
-				if (input>=50 && input <100)
+				if (input >= 50 && input < 100)
 					color = "#04B45F";
 				String sinput = Integer.toString(input);
 				return new SafeHtmlBuilder().appendHtmlConstant(
-						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+						"<div style = background-color:" + color
+						+ ";padding:2px 2px 2px 2px><p>" + sinput
+						+ "</p>").toSafeHtml();
 			}
 		};
 
-			Column<QueryOutput, SafeHtml> Prot_ConfidenceSS =new Column<QueryOutput, SafeHtml>(
-					new SafeHtmlCell()) {
+		Column<QueryOutput, SafeHtml> Prot_ConfidenceSS = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				int input = result.protease.totalSS;
 				String color = "white";
-				if (input>0 && input < 3)
+				if (input > 0 && input < 3)
 					color = "#E0F8EC";
-				if (input>=3 && input <10)
+				if (input >= 3 && input < 10)
 					color = "#A9F5D0";
-				if (input>=10 && input <20)
+				if (input >= 10 && input < 20)
 					color = "#58FAAC";
-				if (input>=20 && input <50)
+				if (input >= 20 && input < 50)
 					color = "#00FF80";
-				if (input>=50 && input <100)
+				if (input >= 50 && input < 100)
 					color = "#04B45F";
 				String sinput = Integer.toString(input);
 				return new SafeHtmlBuilder().appendHtmlConstant(
-						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+						"<div style = background-color:" + color
+						+ ";padding:2px 2px 2px 2px><p>" + sinput
+						+ "</p>").toSafeHtml();
 			}
 		};
-//			Column<QueryOutput, SafeHtml> Prot_ConfidenceHP =new Column<QueryOutput, SafeHtml>(
-//					new SafeHtmlCell()) {
-//			@Override
-//			public SafeHtml getValue(QueryOutput result) {
-//				int input = result.protease.totalHP;
-//				String color = "white";
-//				if (input>0 && input < 5)
-//					color = "E9FFF7";
-//				if (input>=5 && input <10)
-//					color = "C2FDE7";
-//				String sinput = Integer.toString(input);
-//				return new SafeHtmlBuilder().appendHtmlConstant(
-//						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
-//			}
-//		};
-//
-//			Column<QueryOutput, SafeHtml> Prot_ConfidenceP =new Column<QueryOutput, SafeHtml>(
-//					new SafeHtmlCell()) {
-//			@Override
-//			public SafeHtml getValue(QueryOutput result) {
-//				int input = result.protease.totalP;
-//				String color = "white";
-//				if (input>0 && input < 5)
-//					color = "#E0F8EC";
-//				if (input>=5 && input <10)
-//					color = "#A9F5D0";
-//				if (input>=10 && input <20)
-//					color = "#58FAAC";
-//				if (input>=20 && input <50)
-//					color = "#00FF80";
-//				if (input>=50 && input <100)
-//					color = "#04B45F";
-//				String sinput = Integer.toString(input);
-//				return new SafeHtmlBuilder().appendHtmlConstant(
-//						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
-//			}
-//		};
+		// Column<QueryOutput, SafeHtml> Prot_ConfidenceHP =new
+		// Column<QueryOutput, SafeHtml>(
+		// new SafeHtmlCell()) {
+		// @Override
+		// public SafeHtml getValue(QueryOutput result) {
+		// int input = result.protease.totalHP;
+		// String color = "white";
+		// if (input>0 && input < 5)
+		// color = "E9FFF7";
+		// if (input>=5 && input <10)
+		// color = "C2FDE7";
+		// String sinput = Integer.toString(input);
+		// return new SafeHtmlBuilder().appendHtmlConstant(
+		// "<div style = background-color:" + color
+		// +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+		// }
+		// };
+		//
+		// Column<QueryOutput, SafeHtml> Prot_ConfidenceP =new
+		// Column<QueryOutput, SafeHtml>(
+		// new SafeHtmlCell()) {
+		// @Override
+		// public SafeHtml getValue(QueryOutput result) {
+		// int input = result.protease.totalP;
+		// String color = "white";
+		// if (input>0 && input < 5)
+		// color = "#E0F8EC";
+		// if (input>=5 && input <10)
+		// color = "#A9F5D0";
+		// if (input>=10 && input <20)
+		// color = "#58FAAC";
+		// if (input>=20 && input <50)
+		// color = "#00FF80";
+		// if (input>=50 && input <100)
+		// color = "#04B45F";
+		// String sinput = Integer.toString(input);
+		// return new SafeHtmlBuilder().appendHtmlConstant(
+		// "<div style = background-color:" + color
+		// +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+		// }
+		// };
 
-			Column<QueryOutput, SafeHtml> Prot_Confidencemm1 =new Column<QueryOutput, SafeHtml>(
-					new SafeHtmlCell()) {
+		Column<QueryOutput, SafeHtml> Prot_Confidencemm1 = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				int input = result.protease.total1mm;
 				String color = "white";
-				if (input>0 && input < 3)
+				if (input > 0 && input < 3)
 					color = "#E0F8EC";
-				if (input>=3 && input <10)
+				if (input >= 3 && input < 10)
 					color = "#A9F5D0";
-				if (input>=10 && input <20)
+				if (input >= 10 && input < 20)
 					color = "#58FAAC";
-				if (input>=20 && input <50)
+				if (input >= 20 && input < 50)
 					color = "#00FF80";
-				if (input>=50 && input <100)
+				if (input >= 50 && input < 100)
 					color = "#04B45F";
 				String sinput = Integer.toString(input);
 				return new SafeHtmlBuilder().appendHtmlConstant(
-						"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
+						"<div style = background-color:" + color
+						+ ";padding:2px 2px 2px 2px><p>" + sinput
+						+ "</p>").toSafeHtml();
 			}
 		};
 
-		Column<QueryOutput, SafeHtml> Prot_Confidencemm2 =new Column<QueryOutput, SafeHtml>(
+		Column<QueryOutput, SafeHtml> Prot_Confidencemm2 = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
-		@Override
-		public SafeHtml getValue(QueryOutput result) {
-			int input = result.protease.total2mm;
-			String color = "white";
-			if (input>0 && input < 3)
-				color = "#E0F8EC";
-			if (input>=3 && input <10)
-				color = "#A9F5D0";
-			if (input>=10 && input <20)
-				color = "#58FAAC";
-			if (input>=20 && input <50)
-				color = "#00FF80";
-			if (input>=50 && input <100)
-				color = "#04B45F";
-			String sinput = Integer.toString(input);
-			return new SafeHtmlBuilder().appendHtmlConstant(
-					"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
-		}
-	};
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				int input = result.protease.total2mm;
+				String color = "white";
+				if (input > 0 && input < 3)
+					color = "#E0F8EC";
+				if (input >= 3 && input < 10)
+					color = "#A9F5D0";
+				if (input >= 10 && input < 20)
+					color = "#58FAAC";
+				if (input >= 20 && input < 50)
+					color = "#00FF80";
+				if (input >= 50 && input < 100)
+					color = "#04B45F";
+				String sinput = Integer.toString(input);
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<div style = background-color:" + color
+						+ ";padding:2px 2px 2px 2px><p>" + sinput
+						+ "</p>").toSafeHtml();
+			}
+		};
 
-			 Column<QueryOutput, SafeHtml> Prot_Confidencemm3 =new Column<QueryOutput, SafeHtml>(
-						new SafeHtmlCell()) {
-				@Override
-				public SafeHtml getValue(QueryOutput result) {
-					int input = result.protease.total3mm;
-					String color = "white";
-					if (input>0 && input < 3)
-						color = "#E0F8EC";
-					if (input>=3 && input <10)
-						color = "#A9F5D0";
-					if (input>=10 && input <20)
-						color = "#58FAAC";
-					if (input>=20 && input <50)
-						color = "#00FF80";
-					if (input>=50 && input <100)
-						color = "#04B45F";
-					String sinput = Integer.toString(input);
-					return new SafeHtmlBuilder().appendHtmlConstant(
-							"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
-				}
-			};
-			
-			 Column<QueryOutput, SafeHtml> Prot_TOTAL =new Column<QueryOutput, SafeHtml>(
-						new SafeHtmlCell()) {
-				@Override
-				public SafeHtml getValue(QueryOutput result) {
-					int input = result.protease.totalSPSL + result.protease.totalSS + result.protease.total1mm + result.protease.total2mm + result.protease.total3mm;
-					String color = "white";
-					if (input>0 && input < 3)
-						color = "#E0F8EC";
-					if (input>=3 && input <10)
-						color = "#A9F5D0";
-					if (input>=10 && input <20)
-						color = "#58FAAC";
-					if (input>=20 && input <50)
-						color = "#00FF80";
-					if (input>=50 && input <100)
-						color = "#04B45F";
-					String sinput = Integer.toString(input);
-					return new SafeHtmlBuilder().appendHtmlConstant(
-							"<div style = background-color:" + color +";padding:2px 2px 2px 2px><p>" + sinput + "</p>").toSafeHtml();
-				}
-			};
-			
-//			 Column<QueryOutput, SafeHtml> Prot_OMIM = new Column<QueryOutput, SafeHtml>(
-//						new SafeHtmlCell()) {
-//					@Override
-//					public SafeHtml getValue(QueryOutput result) {
-//						String omim = result.protease.P_OMIM;
-//						if (omim.equals("-"))
-//							return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
-//						return new SafeHtmlBuilder().appendHtmlConstant(
-//								"<a href=\"http://omim.org/entry/"
-//										+ omim
-//										+ "\"target=\"_blank\">" + omim + "</a>")
-//								.toSafeHtml();
-//					}
-//				};
-				
+		Column<QueryOutput, SafeHtml> Prot_Confidencemm3 = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				int input = result.protease.total3mm;
+				String color = "white";
+				if (input > 0 && input < 3)
+					color = "#E0F8EC";
+				if (input >= 3 && input < 10)
+					color = "#A9F5D0";
+				if (input >= 10 && input < 20)
+					color = "#58FAAC";
+				if (input >= 20 && input < 50)
+					color = "#00FF80";
+				if (input >= 50 && input < 100)
+					color = "#04B45F";
+				String sinput = Integer.toString(input);
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<div style = background-color:" + color
+						+ ";padding:2px 2px 2px 2px><p>" + sinput
+						+ "</p>").toSafeHtml();
+			}
+		};
+
+		Column<QueryOutput, SafeHtml> Prot_TOTAL = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				int input = result.protease.totalSPSL + result.protease.totalSS
+						+ result.protease.total1mm + result.protease.total2mm
+						+ result.protease.total3mm;
+				String color = "white";
+				if (input > 0 && input < 3)
+					color = "#E0F8EC";
+				if (input >= 3 && input < 10)
+					color = "#A9F5D0";
+				if (input >= 10 && input < 20)
+					color = "#58FAAC";
+				if (input >= 20 && input < 50)
+					color = "#00FF80";
+				if (input >= 50 && input < 100)
+					color = "#04B45F";
+				String sinput = Integer.toString(input);
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<div style = background-color:" + color
+						+ ";padding:2px 2px 2px 2px><p>" + sinput
+						+ "</p>").toSafeHtml();
+			}
+		};
+
+		// Column<QueryOutput, SafeHtml> Prot_OMIM = new Column<QueryOutput,
+		// SafeHtml>(
+		// new SafeHtmlCell()) {
+		// @Override
+		// public SafeHtml getValue(QueryOutput result) {
+		// String omim = result.protease.P_OMIM;
+		// if (omim.equals("-"))
+		// return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
+		// return new SafeHtmlBuilder().appendHtmlConstant(
+		// "<a href=\"http://omim.org/entry/"
+		// + omim
+		// + "\"target=\"_blank\">" + omim + "</a>")
+		// .toSafeHtml();
+		// }
+		// };
+
 		Prot_Protease.setSortable(true);
 		Prot_ConfidenceSPSL.setSortable(true);
 		Prot_ConfidenceSS.setSortable(true);
-//		Prot_ConfidenceHP.setSortable(true);
-//		Prot_ConfidenceP.setSortable(true);
+		// Prot_ConfidenceHP.setSortable(true);
+		// Prot_ConfidenceP.setSortable(true);
 		Prot_Confidencemm1.setSortable(true);
 		Prot_Confidencemm2.setSortable(true);
 		Prot_Confidencemm3.setSortable(true);
 		Prot_TOTAL.setSortable(true);
 		proteaseTable.addColumn(Prot_Protease, "\u25B2Protease\u25BC");
-		proteaseTable.addColumn(Prot_ConfidenceSPSL, "\u25B2Confidence ++++\u25BC");
-		proteaseTable.addColumn(Prot_ConfidenceSS, "\u25B2Confidence +++\u25BC");
-//		proteaseTable.addColumn(Prot_ConfidenceHP, "\u25B2Confidence ++\u25BC");
-//		proteaseTable.addColumn(Prot_ConfidenceP, "\u25B2Confidence +\u25BC");
-		proteaseTable.addColumn(Prot_Confidencemm1, "\u25B2Confidence +-\u25BC");
-		proteaseTable.addColumn(Prot_Confidencemm2, "\u25B2Confidence +--\u25BC");
-		proteaseTable.addColumn(Prot_Confidencemm3, "\u25B2Confidence +---\u25BC");
+		proteaseTable.addColumn(Prot_ConfidenceSPSL,
+				"\u25B2Confidence ++++\u25BC");
+		proteaseTable
+		.addColumn(Prot_ConfidenceSS, "\u25B2Confidence +++\u25BC");
+		// proteaseTable.addColumn(Prot_ConfidenceHP,
+		// "\u25B2Confidence ++\u25BC");
+		// proteaseTable.addColumn(Prot_ConfidenceP,
+		// "\u25B2Confidence +\u25BC");
+		proteaseTable
+		.addColumn(Prot_Confidencemm1, "\u25B2Confidence +-\u25BC");
+		proteaseTable.addColumn(Prot_Confidencemm2,
+				"\u25B2Confidence +--\u25BC");
+		proteaseTable.addColumn(Prot_Confidencemm3,
+				"\u25B2Confidence +---\u25BC");
 		proteaseTable.addColumn(Prot_TOTAL, "\u25B2Total\u25BC");
-//		proteaseTable.addColumn(Prot_OMIM, "OMIM");
-//		
+		// proteaseTable.addColumn(Prot_OMIM, "OMIM");
+		//
 		Proteaseresult.add(proteaseTable);
 		// Create a data provider.
-				ListDataProvider<QueryOutput> csdataProvider = new ListDataProvider<QueryOutput>();
+		ListDataProvider<QueryOutput> csdataProvider = new ListDataProvider<QueryOutput>();
 
-				// Connect the table to the data provider.
-				csdataProvider.addDataDisplay(proteaseTable);
+		// Connect the table to the data provider.
+		csdataProvider.addDataDisplay(proteaseTable);
 
-				// Add the data to the data provider, which automatically pushes it to
-				// the
-				// widget
-				List<QueryOutput> proteaselist = csdataProvider.getList();
-				for (QueryOutput proteaseresultTable : ProteaseOutputList) {
-					proteaselist.add(proteaseresultTable);
+		// Add the data to the data provider, which automatically pushes it to
+		// the
+		// widget
+		List<QueryOutput> proteaselist = csdataProvider.getList();
+		for (QueryOutput proteaseresultTable : ProteaseOutputList) {
+			proteaselist.add(proteaseresultTable);
+		}
+
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
+		ListHandler<QueryOutput> proteaseColSortHandler = new ListHandler<QueryOutput>(
+				proteaselist);
+		proteaseColSortHandler.setComparator(Prot_Protease,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
 				}
 
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<QueryOutput> proteaseColSortHandler = new ListHandler<QueryOutput>(
-						proteaselist);
-				proteaseColSortHandler.setComparator(Prot_Protease,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.protease.P_Symbol
+							.compareTo(o2.protease.P_Symbol) : 1;
+				}
+				return -1;
+			}
+		});
+		proteaseTable.addColumnSortHandler(proteaseColSortHandler);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.protease.P_Symbol
-											.compareTo(o2.protease.P_Symbol) : 1;
-								}
-								return -1;
-							}
-						});
-				proteaseTable.addColumnSortHandler(proteaseColSortHandler);
+		// We know that the data is sorted alphabetically by default.
+		proteaseTable.getColumnSortList().push(Prot_Protease);
 
-				// We know that the data is sorted alphabetically by default.
-				proteaseTable.getColumnSortList().push(Prot_Protease);
-				
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<QueryOutput> SPSLColSortHandler = new ListHandler<QueryOutput>(
-						proteaselist);
-				SPSLColSortHandler.setComparator(Prot_ConfidenceSPSL,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
+		ListHandler<QueryOutput> SPSLColSortHandler = new ListHandler<QueryOutput>(
+				proteaselist);
+		SPSLColSortHandler.setComparator(Prot_ConfidenceSPSL,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? Integer.toString( o1.protease.totalSPSL)
-											.compareTo(Integer.toString(o2.protease.totalSPSL)) : 1;
-								}
-								return -1;
-							}
-						});
-				proteaseTable.addColumnSortHandler(SPSLColSortHandler);
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? Integer.toString(
+							o1.protease.totalSPSL).compareTo(
+									Integer.toString(o2.protease.totalSPSL))
+									: 1;
+				}
+				return -1;
+			}
+		});
+		proteaseTable.addColumnSortHandler(SPSLColSortHandler);
 
-				// We know that the data is sorted alphabetically by default.
-				proteaseTable.getColumnSortList().push(Prot_ConfidenceSPSL);
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				
-				ListHandler<QueryOutput> SSColSortHandler = new ListHandler<QueryOutput>(
-						proteaselist);
-				SSColSortHandler.setComparator(Prot_ConfidenceSS,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+		// We know that the data is sorted alphabetically by default.
+		proteaseTable.getColumnSortList().push(Prot_ConfidenceSPSL);
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? Integer.toString( o1.protease.totalSS)
-											.compareTo(Integer.toString(o2.protease.totalSS)) : 1;
-								}
-								return -1;
-							}
-						});
-				proteaseTable.addColumnSortHandler(SSColSortHandler);
+		ListHandler<QueryOutput> SSColSortHandler = new ListHandler<QueryOutput>(
+				proteaselist);
+		SSColSortHandler.setComparator(Prot_ConfidenceSS,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-				// We know that the data is sorted alphabetically by default.
-				proteaseTable.getColumnSortList().push(Prot_ConfidenceSS);
-				
-//				ListHandler<QueryOutput> HPColSortHandler = new ListHandler<QueryOutput>(
-//						proteaselist);
-//				HPColSortHandler.setComparator(Prot_ConfidenceHP,
-//						new Comparator<QueryOutput>() {
-//							public int compare(QueryOutput o1, QueryOutput o2) {
-//								if (o1 == o2) {
-//									return 0;
-//								}
-//
-//								// Compare the symbol columns.
-//								if (o1 != null) {
-//									return (o2 != null) ? Integer.toString( o1.protease.totalHP)
-//											.compareTo(Integer.toString(o2.protease.totalHP)) : 1;
-//								}
-//								return -1;
-//							}
-//						});
-//				proteaseTable.addColumnSortHandler(HPColSortHandler);
-//
-//				// We know that the data is sorted alphabetically by default.
-//				proteaseTable.getColumnSortList().push(Prot_ConfidenceHP);
-//				
-//				ListHandler<QueryOutput> PColSortHandler = new ListHandler<QueryOutput>(
-//						proteaselist);
-//				PColSortHandler.setComparator(Prot_ConfidenceP,
-//						new Comparator<QueryOutput>() {
-//							public int compare(QueryOutput o1, QueryOutput o2) {
-//								if (o1 == o2) {
-//									return 0;
-//								}
-//
-//								// Compare the symbol columns.
-//								if (o1 != null) {
-//									return (o2 != null) ? Integer.toString( o1.protease.totalP)
-//											.compareTo(Integer.toString(o2.protease.totalP)) : 1;
-//								}
-//								return -1;
-//							}
-//						});
-//				proteaseTable.addColumnSortHandler(PColSortHandler);
-//
-//				// We know that the data is sorted alphabetically by default.
-//				proteaseTable.getColumnSortList().push(Prot_ConfidenceP);
-				
-				ListHandler<QueryOutput> mm1ColSortHandler = new ListHandler<QueryOutput>(
-						proteaselist);
-				mm1ColSortHandler.setComparator(Prot_Confidencemm1,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? Integer.toString(
+							o1.protease.totalSS).compareTo(
+									Integer.toString(o2.protease.totalSS)) : 1;
+				}
+				return -1;
+			}
+		});
+		proteaseTable.addColumnSortHandler(SSColSortHandler);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? Integer.toString( o1.protease.total1mm)
-											.compareTo(Integer.toString(o2.protease.total1mm)) : 1;
-								}
-								return -1;
-							}
-						});
-				proteaseTable.addColumnSortHandler(mm1ColSortHandler);
+		// We know that the data is sorted alphabetically by default.
+		proteaseTable.getColumnSortList().push(Prot_ConfidenceSS);
 
-				// We know that the data is sorted alphabetically by default.
-				proteaseTable.getColumnSortList().push(Prot_Confidencemm1);
-				
-				ListHandler<QueryOutput> mm2ColSortHandler = new ListHandler<QueryOutput>(
-						proteaselist);
-				mm2ColSortHandler.setComparator(Prot_Confidencemm2,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+		// ListHandler<QueryOutput> HPColSortHandler = new
+		// ListHandler<QueryOutput>(
+		// proteaselist);
+		// HPColSortHandler.setComparator(Prot_ConfidenceHP,
+		// new Comparator<QueryOutput>() {
+		// public int compare(QueryOutput o1, QueryOutput o2) {
+		// if (o1 == o2) {
+		// return 0;
+		// }
+		//
+		// // Compare the symbol columns.
+		// if (o1 != null) {
+		// return (o2 != null) ? Integer.toString( o1.protease.totalHP)
+		// .compareTo(Integer.toString(o2.protease.totalHP)) : 1;
+		// }
+		// return -1;
+		// }
+		// });
+		// proteaseTable.addColumnSortHandler(HPColSortHandler);
+		//
+		// // We know that the data is sorted alphabetically by default.
+		// proteaseTable.getColumnSortList().push(Prot_ConfidenceHP);
+		//
+		// ListHandler<QueryOutput> PColSortHandler = new
+		// ListHandler<QueryOutput>(
+		// proteaselist);
+		// PColSortHandler.setComparator(Prot_ConfidenceP,
+		// new Comparator<QueryOutput>() {
+		// public int compare(QueryOutput o1, QueryOutput o2) {
+		// if (o1 == o2) {
+		// return 0;
+		// }
+		//
+		// // Compare the symbol columns.
+		// if (o1 != null) {
+		// return (o2 != null) ? Integer.toString( o1.protease.totalP)
+		// .compareTo(Integer.toString(o2.protease.totalP)) : 1;
+		// }
+		// return -1;
+		// }
+		// });
+		// proteaseTable.addColumnSortHandler(PColSortHandler);
+		//
+		// // We know that the data is sorted alphabetically by default.
+		// proteaseTable.getColumnSortList().push(Prot_ConfidenceP);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? Integer.toString( o1.protease.total2mm)
-											.compareTo(Integer.toString(o2.protease.total2mm)) : 1;
-								}
-								return -1;
-							}
-						});
-				proteaseTable.addColumnSortHandler(mm2ColSortHandler);
+		ListHandler<QueryOutput> mm1ColSortHandler = new ListHandler<QueryOutput>(
+				proteaselist);
+		mm1ColSortHandler.setComparator(Prot_Confidencemm1,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-				// We know that the data is sorted alphabetically by default.
-				proteaseTable.getColumnSortList().push(Prot_Confidencemm2);
-				
-				ListHandler<QueryOutput> mm3ColSortHandler = new ListHandler<QueryOutput>(
-						proteaselist);
-				mm3ColSortHandler.setComparator(Prot_Confidencemm3,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? Integer.toString(
+							o1.protease.total1mm).compareTo(
+									Integer.toString(o2.protease.total1mm)) : 1;
+				}
+				return -1;
+			}
+		});
+		proteaseTable.addColumnSortHandler(mm1ColSortHandler);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? Integer.toString( o1.protease.total3mm)
-											.compareTo(Integer.toString(o2.protease.total3mm)) : 1;
-								}
-								return -1;
-							}
-						});
-				proteaseTable.addColumnSortHandler(mm3ColSortHandler);
+		// We know that the data is sorted alphabetically by default.
+		proteaseTable.getColumnSortList().push(Prot_Confidencemm1);
 
-				// We know that the data is sorted alphabetically by default.
-				proteaseTable.getColumnSortList().push(Prot_Confidencemm3);
-				
-				ListHandler<QueryOutput> totalColSortHandler = new ListHandler<QueryOutput>(
-						proteaselist);
-				totalColSortHandler.setComparator(Prot_TOTAL,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+		ListHandler<QueryOutput> mm2ColSortHandler = new ListHandler<QueryOutput>(
+				proteaselist);
+		mm2ColSortHandler.setComparator(Prot_Confidencemm2,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? Integer.toString(o1.protease.totalSPSL + o1.protease.totalSS + o1.protease.total1mm + o1.protease.total2mm + o1.protease.total3mm )
-											.compareTo(Integer.toString(o2.protease.totalSPSL + o2.protease.totalSS + o2.protease.total1mm + o2.protease.total2mm + o2.protease.total3mm)) : 1;
-								}
-								return -1;
-							}
-						});
-				proteaseTable.addColumnSortHandler(totalColSortHandler);
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? Integer.toString(
+							o1.protease.total2mm).compareTo(
+									Integer.toString(o2.protease.total2mm)) : 1;
+				}
+				return -1;
+			}
+		});
+		proteaseTable.addColumnSortHandler(mm2ColSortHandler);
 
-				// We know that the data is sorted alphabetically by default.
-				proteaseTable.getColumnSortList().push(Prot_TOTAL);
-				
-				
+		// We know that the data is sorted alphabetically by default.
+		proteaseTable.getColumnSortList().push(Prot_Confidencemm2);
+
+		ListHandler<QueryOutput> mm3ColSortHandler = new ListHandler<QueryOutput>(
+				proteaselist);
+		mm3ColSortHandler.setComparator(Prot_Confidencemm3,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
+
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? Integer.toString(
+							o1.protease.total3mm).compareTo(
+									Integer.toString(o2.protease.total3mm)) : 1;
+				}
+				return -1;
+			}
+		});
+		proteaseTable.addColumnSortHandler(mm3ColSortHandler);
+
+		// We know that the data is sorted alphabetically by default.
+		proteaseTable.getColumnSortList().push(Prot_Confidencemm3);
+
+		ListHandler<QueryOutput> totalColSortHandler = new ListHandler<QueryOutput>(
+				proteaselist);
+		totalColSortHandler.setComparator(Prot_TOTAL,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
+
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? Integer.toString(
+							o1.protease.totalSPSL + o1.protease.totalSS
+							+ o1.protease.total1mm
+							+ o1.protease.total2mm
+							+ o1.protease.total3mm).compareTo(
+									Integer.toString(o2.protease.totalSPSL
+											+ o2.protease.totalSS
+											+ o2.protease.total1mm
+											+ o2.protease.total2mm
+											+ o2.protease.total3mm)) : 1;
+				}
+				return -1;
+			}
+		});
+		proteaseTable.addColumnSortHandler(totalColSortHandler);
+
+		// We know that the data is sorted alphabetically by default.
+		proteaseTable.getColumnSortList().push(Prot_TOTAL);
+
 	}
-		
+
 	private void createCleavageSiteTable(QueryOutput[] CsOutputArray,
 			List<QueryOutput> CsOutputList) {
 		//
 		int rowscs = CsOutputArray.length;
 
-		CellTable.Resources cstableresources = GWT.create(CSTableResources.class);
+		CellTable.Resources cstableresources = GWT
+				.create(CSTableResources.class);
 		CellTable<QueryOutput> csTable = new CellTable<QueryOutput>(rowscs,
 				cstableresources);
 		csTable.setWidth("1280px");
@@ -1211,7 +1629,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 						"<a href=\"http://www.uniprot.org/uniprot/"
 								+ result.substrate.S_Uniprotid
 								+ "\"target=\"_blank\">" + substrate + "</a>")
-						.toSafeHtml();
+								.toSafeHtml();
 
 			}
 
@@ -1232,15 +1650,15 @@ public class PrototypeEntryPoint implements EntryPoint {
 							+ result.peptide.Pep_sequence.substring(length - 8)
 							+ "</font></p>"
 							: "<p><font size=\"1\">"
-									+ result.peptide.Pep_sequence.substring(0,
-											8)
+							+ result.peptide.Pep_sequence.substring(0,
+									8)
 									+ "[...]"
 									+ result.peptide.Pep_sequence.substring(
 											length - 8, length - 3)
-									+ "<font color= #82a38d><u>"
-									+ result.peptide.Pep_sequence
+											+ "<font color= #82a38d><u>"
+											+ result.peptide.Pep_sequence
 											.substring(length - 3)
-									+ "</u></font></font></p>";
+											+ "</u></font></font></p>";
 				} else {
 					sequence = result.cleavagesite.CS_NorCterm.contains("N") ? "<p><font size=\"1\"><font color= #82a38d><u>"
 							+ result.peptide.Pep_sequence.substring(0, 3)
@@ -1248,11 +1666,11 @@ public class PrototypeEntryPoint implements EntryPoint {
 							+ result.peptide.Pep_sequence.substring(3)
 							+ "</font></p>"
 							: "<p><font size=\"1\">"
-									+ result.peptide.Pep_sequence.substring(0,
-											length - 3)
+							+ result.peptide.Pep_sequence.substring(0,
+									length - 3)
 									+ "<font color= #82a38d><u>"
 									+ result.peptide.Pep_sequence
-											.substring(length - 3)
+									.substring(length - 3)
 									+ "</u></font></font></p>";
 				}
 				return new SafeHtmlBuilder().appendHtmlConstant(sequence)
@@ -1287,7 +1705,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 						"<a href=\"http://www.uniprot.org/uniprot/"
 								+ result.protease.P_Uniprotid
 								+ "\"target=\"_blank\">" + symbol + "</a>")
-						.toSafeHtml();
+								.toSafeHtml();
 			}
 		};
 
@@ -1296,7 +1714,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				String input = result.confidence.equals(SPSL) ? "&#215" : "";
-				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<font size = 3><b>" + input + "</b></font>")
 						.toSafeHtml();
 			}
 		};
@@ -1306,36 +1725,42 @@ public class PrototypeEntryPoint implements EntryPoint {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				String input = result.confidence.equals(SS) ? "&#215" : "";
-				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<font size = 3><b>" + input + "</b></font>")
 						.toSafeHtml();
 			}
 		};
 
-//		Column<QueryOutput, SafeHtml> CS_ConfidenceHP = new Column<QueryOutput, SafeHtml>(
-//				new SafeHtmlCell()) {
-//			@Override
-//			public SafeHtml getValue(QueryOutput result) {
-//				String input = result.confidence.equals(HP) ? "&#215" : "";
-//				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
-//						.toSafeHtml();
-//			}
-//		};
-//
-//		Column<QueryOutput, SafeHtml> CS_ConfidenceP = new Column<QueryOutput, SafeHtml>(
-//				new SafeHtmlCell()) {
-//			@Override
-//			public SafeHtml getValue(QueryOutput result) {
-//				String input = result.confidence.equals(P) ? "&#215" : "";
-//				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
-//						.toSafeHtml();
-//			}
-//		};
+		// Column<QueryOutput, SafeHtml> CS_ConfidenceHP = new
+		// Column<QueryOutput, SafeHtml>(
+		// new SafeHtmlCell()) {
+		// @Override
+		// public SafeHtml getValue(QueryOutput result) {
+		// String input = result.confidence.equals(HP) ? "&#215" : "";
+		// return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>"
+		// + input + "</b></font>")
+		// .toSafeHtml();
+		// }
+		// };
+		//
+		// Column<QueryOutput, SafeHtml> CS_ConfidenceP = new
+		// Column<QueryOutput, SafeHtml>(
+		// new SafeHtmlCell()) {
+		// @Override
+		// public SafeHtml getValue(QueryOutput result) {
+		// String input = result.confidence.equals(P) ? "&#215" : "";
+		// return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>"
+		// + input + "</b></font>")
+		// .toSafeHtml();
+		// }
+		// };
 		Column<QueryOutput, SafeHtml> CS_Confidencemm1 = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				String input = result.confidence.equals(mm1) ? "&#215" : "";
-				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<font size = 3><b>" + input + "</b></font>")
 						.toSafeHtml();
 			}
 		};
@@ -1344,7 +1769,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				String input = result.confidence.equals(mm2) ? "&#215" : "";
-				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<font size = 3><b>" + input + "</b></font>")
 						.toSafeHtml();
 			}
 		};
@@ -1354,7 +1780,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				String input = result.confidence.equals(mm3) ? "&#215" : "";
-				return new SafeHtmlBuilder().appendHtmlConstant("<font size = 3><b>" + input + "</b></font>")
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<font size = 3><b>" + input + "</b></font>")
 						.toSafeHtml();
 			}
 		};
@@ -1470,8 +1897,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 		CS_CSSeq.setSortable(true);
 		CS_ConfidenceSPSL.setSortable(true);
 		CS_ConfidenceSS.setSortable(true);
-//		CS_ConfidenceHP.setSortable(true);
-//		CS_ConfidenceP.setSortable(true);
+		// CS_ConfidenceHP.setSortable(true);
+		// CS_ConfidenceP.setSortable(true);
 		CS_Confidencemm1.setSortable(true);
 		CS_Confidencemm2.setSortable(true);
 		CS_Confidencemm3.setSortable(true);
@@ -1484,8 +1911,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 		csTable.addColumn(CS_Protease, "\u25B2Protease\u25BC");
 		csTable.addColumn(CS_ConfidenceSPSL, "\u25B2Confidence\u25BC ++++");
 		csTable.addColumn(CS_ConfidenceSS, "\u25B2Confidence\u25BC +++");
-//		csTable.addColumn(CS_ConfidenceHP, "\u25B2Confidence\u25BC ++");
-//		csTable.addColumn(CS_ConfidenceP, "\u25B2Confidence\u25BC +");
+		// csTable.addColumn(CS_ConfidenceHP, "\u25B2Confidence\u25BC ++");
+		// csTable.addColumn(CS_ConfidenceP, "\u25B2Confidence\u25BC +");
 		csTable.addColumn(CS_Confidencemm1, "\u25B2Confidence\u25BC +-");
 		csTable.addColumn(CS_Confidencemm2, "\u25B2Confidence\u25BC +--");
 		csTable.addColumn(CS_Confidencemm3, "\u25B2Confidence\u25BC +---");
@@ -1523,19 +1950,19 @@ public class PrototypeEntryPoint implements EntryPoint {
 				cslist);
 		inputNumberColSortHandler.setComparator(CS_PepID,
 				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1, QueryOutput o2) {
-						if (o1 == o2) {
-							return 0;
-						}
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-						// Compare the symbol columns.
-						if (o1 != null) {
-							return (o2 != null) ? o1.peptide.Pep_Id
-									.compareTo(o2.peptide.Pep_Id) : 1;
-						}
-						return -1;
-					}
-				});
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.peptide.Pep_Id
+							.compareTo(o2.peptide.Pep_Id) : 1;
+				}
+				return -1;
+			}
+		});
 		csTable.addColumnSortHandler(inputNumberColSortHandler);
 
 		// We know that the data is sorted alphabetically by default.
@@ -1547,19 +1974,19 @@ public class PrototypeEntryPoint implements EntryPoint {
 				cslist);
 		substrateColSortHandler.setComparator(CS_Substrate,
 				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1, QueryOutput o2) {
-						if (o1 == o2) {
-							return 0;
-						}
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-						// Compare the symbol columns.
-						if (o1 != null) {
-							return (o2 != null) ? o1.substrate.S_Symbol
-									.compareTo(o2.substrate.S_Symbol) : 1;
-						}
-						return -1;
-					}
-				});
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.substrate.S_Symbol
+							.compareTo(o2.substrate.S_Symbol) : 1;
+				}
+				return -1;
+			}
+		});
 		csTable.addColumnSortHandler(substrateColSortHandler);
 
 		// We know that the data is sorted alphabetically by default.
@@ -1571,21 +1998,21 @@ public class PrototypeEntryPoint implements EntryPoint {
 				cslist);
 		proteaseColSortHandler.setComparator(CS_Protease,
 				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1, QueryOutput o2) {
-						if (o1 == o2) {
-							return 0;
-						}
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-						// Compare the symbol columns.
-						if (o1 != null) {
-							return (o2 != null) ? o1.protease.P_Symbol
-									.toUpperCase().compareTo(
-											o2.protease.P_Symbol.toUpperCase())
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.protease.P_Symbol
+							.toUpperCase().compareTo(
+									o2.protease.P_Symbol.toUpperCase())
 									: 1;
-						}
-						return -1;
-					}
-				});
+				}
+				return -1;
+			}
+		});
 		csTable.addColumnSortHandler(proteaseColSortHandler);
 
 		// We know that the data is sorted alphabetically by default.
@@ -1597,208 +2024,200 @@ public class PrototypeEntryPoint implements EntryPoint {
 				cslist);
 		searchedCSColSortHandler.setComparator(CS_CSSeq,
 				new Comparator<QueryOutput>() {
-					public int compare(QueryOutput o1, QueryOutput o2) {
-						if (o1 == o2) {
-							return 0;
-						}
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-						// Compare the symbol columns.
-						if (o1 != null) {
-							return (o2 != null) ? o1.cleavagesite.CS_InputCS
-									.toUpperCase().compareTo(
-											o2.cleavagesite.CS_InputCS
-													.toUpperCase()) : 1;
-						}
-						return -1;
-					}
-				});
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.cleavagesite.CS_InputCS
+							.toUpperCase().compareTo(
+									o2.cleavagesite.CS_InputCS
+									.toUpperCase()) : 1;
+				}
+				return -1;
+			}
+		});
 		csTable.addColumnSortHandler(searchedCSColSortHandler);
 
 		// We know that the data is sorted alphabetically by default.
 		csTable.getColumnSortList().push(CS_CSSeq);
 
 		// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<QueryOutput> SPSLColSortHandler = new ListHandler<QueryOutput>(
-						cslist);
-				SPSLColSortHandler.setComparator(CS_ConfidenceSPSL,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+		// java.util.List.
+		ListHandler<QueryOutput> SPSLColSortHandler = new ListHandler<QueryOutput>(
+				cslist);
+		SPSLColSortHandler.setComparator(CS_ConfidenceSPSL,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.SPSL
-											.toUpperCase().compareTo(
-													o2.SPSL
-															.toUpperCase()) : 1;
-								}
-								return -1;
-							}
-						});
-				csTable.addColumnSortHandler(SPSLColSortHandler);
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.SPSL.toUpperCase()
+							.compareTo(o2.SPSL.toUpperCase()) : 1;
+				}
+				return -1;
+			}
+		});
+		csTable.addColumnSortHandler(SPSLColSortHandler);
 
-				// We know that the data is sorted alphabetically by default.
-				csTable.getColumnSortList().push(CS_ConfidenceSPSL);
-				
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<QueryOutput> SSColSortHandler = new ListHandler<QueryOutput>(
-						cslist);
-				SSColSortHandler.setComparator(CS_ConfidenceSS,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+		// We know that the data is sorted alphabetically by default.
+		csTable.getColumnSortList().push(CS_ConfidenceSPSL);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.SS
-											.toUpperCase().compareTo(
-													o2.SS
-															.toUpperCase()) : 1;
-								}
-								return -1;
-							}
-						});
-				csTable.addColumnSortHandler(SSColSortHandler);
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
+		ListHandler<QueryOutput> SSColSortHandler = new ListHandler<QueryOutput>(
+				cslist);
+		SSColSortHandler.setComparator(CS_ConfidenceSS,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-				// We know that the data is sorted alphabetically by default.
-				csTable.getColumnSortList().push(CS_ConfidenceSS);
-				
-//				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-//				// java.util.List.
-//				ListHandler<QueryOutput> HPColSortHandler = new ListHandler<QueryOutput>(
-//						cslist);
-//				HPColSortHandler.setComparator(CS_ConfidenceHP,
-//						new Comparator<QueryOutput>() {
-//							public int compare(QueryOutput o1, QueryOutput o2) {
-//								if (o1 == o2) {
-//									return 0;
-//								}
-//
-//								// Compare the symbol columns.
-//								if (o1 != null) {
-//									return (o2 != null) ? o1.HP
-//											.toUpperCase().compareTo(
-//													o2.HP
-//															.toUpperCase()) : 1;
-//								}
-//								return -1;
-//							}
-//						});
-//				csTable.addColumnSortHandler(HPColSortHandler);
-//
-//				// We know that the data is sorted alphabetically by default.
-//				csTable.getColumnSortList().push(CS_ConfidenceHP);
-//
-//				
-//				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-//				// java.util.List.
-//				ListHandler<QueryOutput> PColSortHandler = new ListHandler<QueryOutput>(
-//						cslist);
-//				PColSortHandler.setComparator(CS_ConfidenceP,
-//						new Comparator<QueryOutput>() {
-//							public int compare(QueryOutput o1, QueryOutput o2) {
-//								if (o1 == o2) {
-//									return 0;
-//								}
-//
-//								// Compare the symbol columns.
-//								if (o1 != null) {
-//									return (o2 != null) ? o1.P
-//											.toUpperCase().compareTo(
-//													o2.P
-//															.toUpperCase()) : 1;
-//								}
-//								return -1;
-//							}
-//						});
-//				csTable.addColumnSortHandler(PColSortHandler);
-//
-//				// We know that the data is sorted alphabetically by default.
-//				csTable.getColumnSortList().push(CS_ConfidenceP);
-				
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<QueryOutput> mm1ColSortHandler = new ListHandler<QueryOutput>(
-						cslist);
-				mm1ColSortHandler.setComparator(CS_Confidencemm1,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.SS.toUpperCase()
+							.compareTo(o2.SS.toUpperCase()) : 1;
+				}
+				return -1;
+			}
+		});
+		csTable.addColumnSortHandler(SSColSortHandler);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.mm1
-											.toUpperCase().compareTo(
-													o2.mm1
-															.toUpperCase()) : 1;
-								}
-								return -1;
-							}
-						});
-				csTable.addColumnSortHandler(mm1ColSortHandler);
+		// We know that the data is sorted alphabetically by default.
+		csTable.getColumnSortList().push(CS_ConfidenceSS);
 
-				// We know that the data is sorted alphabetically by default.
-				csTable.getColumnSortList().push(CS_Confidencemm1);
-				
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<QueryOutput> mm2ColSortHandler = new ListHandler<QueryOutput>(
-						cslist);
-				mm2ColSortHandler.setComparator(CS_Confidencemm2,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+		// // Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// // java.util.List.
+		// ListHandler<QueryOutput> HPColSortHandler = new
+		// ListHandler<QueryOutput>(
+		// cslist);
+		// HPColSortHandler.setComparator(CS_ConfidenceHP,
+		// new Comparator<QueryOutput>() {
+		// public int compare(QueryOutput o1, QueryOutput o2) {
+		// if (o1 == o2) {
+		// return 0;
+		// }
+		//
+		// // Compare the symbol columns.
+		// if (o1 != null) {
+		// return (o2 != null) ? o1.HP
+		// .toUpperCase().compareTo(
+		// o2.HP
+		// .toUpperCase()) : 1;
+		// }
+		// return -1;
+		// }
+		// });
+		// csTable.addColumnSortHandler(HPColSortHandler);
+		//
+		// // We know that the data is sorted alphabetically by default.
+		// csTable.getColumnSortList().push(CS_ConfidenceHP);
+		//
+		//
+		// // Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// // java.util.List.
+		// ListHandler<QueryOutput> PColSortHandler = new
+		// ListHandler<QueryOutput>(
+		// cslist);
+		// PColSortHandler.setComparator(CS_ConfidenceP,
+		// new Comparator<QueryOutput>() {
+		// public int compare(QueryOutput o1, QueryOutput o2) {
+		// if (o1 == o2) {
+		// return 0;
+		// }
+		//
+		// // Compare the symbol columns.
+		// if (o1 != null) {
+		// return (o2 != null) ? o1.P
+		// .toUpperCase().compareTo(
+		// o2.P
+		// .toUpperCase()) : 1;
+		// }
+		// return -1;
+		// }
+		// });
+		// csTable.addColumnSortHandler(PColSortHandler);
+		//
+		// // We know that the data is sorted alphabetically by default.
+		// csTable.getColumnSortList().push(CS_ConfidenceP);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.mm2
-											.toUpperCase().compareTo(
-													o2.mm2
-															.toUpperCase()) : 1;
-								}
-								return -1;
-							}
-						});
-				csTable.addColumnSortHandler(mm2ColSortHandler);
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
+		ListHandler<QueryOutput> mm1ColSortHandler = new ListHandler<QueryOutput>(
+				cslist);
+		mm1ColSortHandler.setComparator(CS_Confidencemm1,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
 
-				// We know that the data is sorted alphabetically by default.
-				csTable.getColumnSortList().push(CS_Confidencemm2);
-				
-				// Add a ColumnSortEvent.ListHandler to connect sorting to the
-				// java.util.List.
-				ListHandler<QueryOutput> mm3ColSortHandler = new ListHandler<QueryOutput>(
-						cslist);
-				mm3ColSortHandler.setComparator(CS_Confidencemm3,
-						new Comparator<QueryOutput>() {
-							public int compare(QueryOutput o1, QueryOutput o2) {
-								if (o1 == o2) {
-									return 0;
-								}
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.mm1.toUpperCase()
+							.compareTo(o2.mm1.toUpperCase()) : 1;
+				}
+				return -1;
+			}
+		});
+		csTable.addColumnSortHandler(mm1ColSortHandler);
 
-								// Compare the symbol columns.
-								if (o1 != null) {
-									return (o2 != null) ? o1.mm3
-											.toUpperCase().compareTo(
-													o2.mm3
-															.toUpperCase()) : 1;
-								}
-								return -1;
-							}
-						});
-				csTable.addColumnSortHandler(mm3ColSortHandler);
+		// We know that the data is sorted alphabetically by default.
+		csTable.getColumnSortList().push(CS_Confidencemm1);
 
-				// We know that the data is sorted alphabetically by default.
-				csTable.getColumnSortList().push(CS_Confidencemm3);
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
+		ListHandler<QueryOutput> mm2ColSortHandler = new ListHandler<QueryOutput>(
+				cslist);
+		mm2ColSortHandler.setComparator(CS_Confidencemm2,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
+
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.mm2.toUpperCase()
+							.compareTo(o2.mm2.toUpperCase()) : 1;
+				}
+				return -1;
+			}
+		});
+		csTable.addColumnSortHandler(mm2ColSortHandler);
+
+		// We know that the data is sorted alphabetically by default.
+		csTable.getColumnSortList().push(CS_Confidencemm2);
+
+		// Add a ColumnSortEvent.ListHandler to connect sorting to the
+		// java.util.List.
+		ListHandler<QueryOutput> mm3ColSortHandler = new ListHandler<QueryOutput>(
+				cslist);
+		mm3ColSortHandler.setComparator(CS_Confidencemm3,
+				new Comparator<QueryOutput>() {
+			public int compare(QueryOutput o1, QueryOutput o2) {
+				if (o1 == o2) {
+					return 0;
+				}
+
+				// Compare the symbol columns.
+				if (o1 != null) {
+					return (o2 != null) ? o1.mm3.toUpperCase()
+							.compareTo(o2.mm3.toUpperCase()) : 1;
+				}
+				return -1;
+			}
+		});
+		csTable.addColumnSortHandler(mm3ColSortHandler);
+
+		// We know that the data is sorted alphabetically by default.
+		csTable.getColumnSortList().push(CS_Confidencemm3);
 	}
 
 }
