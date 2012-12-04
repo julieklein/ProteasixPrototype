@@ -26,11 +26,11 @@ public interface DBConnection extends RemoteService {
 
     public void setSession(String user, String pass);
 
-    public void sendMail(String to, String subject, String body, QueryOutput[] queryCSOut);
+    public void sendMail(String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut);
 
     public void setDebug(boolean debug);
     
-    public void runMailer(String to, String subject, String body, QueryOutput[] queryCSOut);
+    public void runMailer(String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut);
 
 
 }

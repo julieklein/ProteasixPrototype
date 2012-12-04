@@ -62,7 +62,6 @@ public class DB_Protease extends DB_Conn {
 	private String[] possibleposarray = new String[8];
 
 	private boolean sequencevalidity = false;
-	private boolean breakornot = false;
 	private String SPSL = "SPSL";
 	private String SS = "SS";
 	private String HP = "HP";
@@ -82,7 +81,7 @@ public class DB_Protease extends DB_Conn {
 			throws Throwable {
 
 		// // TODO modify here
-		outerloop1: for (QueryInput queryInput : queryFromWebsite) {
+		 for (QueryInput queryInput : queryFromWebsite) {
 			String searchUni = queryInput.substrate.S_Uniprotid;
 			String substratename = null;
 			String substratesymbol = null;
@@ -178,17 +177,20 @@ public class DB_Protease extends DB_Conn {
 					if (queryInput.peptide.Pep_sequence.equals("")) {
 						start = queryInput.peptide.Pep_Start;
 						end = queryInput.peptide.Pep_End;
+						if (end <= fullsequence.length()) {
 						pepsequence = fullsequence.substring(start - 1, end);
 						nTerm = retrieveNCs(start, fullsequence);
 						cTerm = !queryInput.onlyNtermcheckbox ? retrieveCCs(end, fullsequence) : "";
 						sequencevalidity = true;
+						} else {
+							pepsequence = "";
+							sequencevalidity = false;
+						}
 					} else {
 						pepsequence = queryInput.peptide.Pep_sequence
 								.toUpperCase().trim();
 						sequencevalidity = fullsequence.indexOf(pepsequence) != -1 ? true
 								: false;
-						System.out.println(fullsequence.indexOf(pepsequence));
-						System.out.println(sequencevalidity);
 						if (sequencevalidity) {
 							start = fullsequence.indexOf(pepsequence) + 1;
 							end = start + pepsequence.length() - 1;
@@ -203,18 +205,6 @@ public class DB_Protease extends DB_Conn {
 									.toUpperCase().trim();
 							nTerm = "";
 							cTerm = "";
-							QueryInput searchRequest = new QueryInput();
-							PeptideData peptide = new PeptideData();
-							SubstrateData substrate = new SubstrateData();
-							substrate.S_Uniprotid = accession;
-							substrate.S_Symbol = substratesymbol;
-							peptide.Pep_sequence = pepsequence;
-							peptide.Pep_Seqvalidity = sequencevalidity;
-							searchRequest.setPeptide(peptide);
-							searchRequest.setSubstrate(substrate);
-							queryIn.add(searchRequest);
-							breakornot = true;
-							break outerloop1;
 						}
 					}
 					QueryInput searchRequestN = new QueryInput();
@@ -249,24 +239,6 @@ public class DB_Protease extends DB_Conn {
 			}
 		}
 
-		if (breakornot) {
-			QueryOutput[] result = new QueryOutput[queryIn.size()];
-			LinkedList<QueryOutput> resultlist = new LinkedList<QueryOutput>();
-			for (QueryInput queryInput : queryIn) {
-				QueryOutput out = new QueryOutput();
-				SubstrateData substrate2 = new SubstrateData();
-				PeptideData peptide2 = new PeptideData();
-				peptide2.Pep_sequence = queryInput.peptide.Pep_sequence;
-				peptide2.Pep_Seqvalidity = queryInput.peptide.Pep_Seqvalidity;
-				substrate2.S_Symbol = queryInput.substrate.S_Symbol;
-				substrate2.S_Uniprotid = queryInput.substrate.S_Uniprotid;
-				out.setPeptide(peptide2);
-				out.setSubstrate(substrate2);
-				resultlist.add(out);
-			}
-			resultlist.toArray(result);
-			return result;
-		}
 		
 		int rsSizeA = 0;
 		String querySubMatrix = "SELECT * FROM SUBSTITUTIONMATRIX";
@@ -315,11 +287,21 @@ public class DB_Protease extends DB_Conn {
 					cs2.CS_InputCS = queryInput.cleavagesite.CS_InputCS;
 					cs2.CS_InputCS = queryInput.cleavagesite.CS_InputCS;
 					peptide2 = queryInput.peptide;
+					if (queryInput.peptide.Pep_Seqvalidity == true) {
 					out = process(s, result, protease, queryInput, out,
 							substrate2, peptide2, cs2);
+					} else {
+						peptide2.Pep_Seqvalidity = queryInput.peptide.Pep_Seqvalidity;
+						peptide2.Pep_sequence = queryInput.peptide.Pep_sequence;
+						peptide2.Pep_Start = queryInput.peptide.Pep_Start;
+						peptide2.Pep_End = queryInput.peptide.Pep_End;
+						out.setPeptide(peptide2);
+						substrate2.S_Symbol = queryInput.substrate.S_Symbol;
+						substrate2.S_Uniprotid = queryInput.substrate.S_Uniprotid;
+						out.setSubstrate(substrate2);
+						out.confidence = "wrongseq";
+					}					
 					queryOut.add(out);
-					System.out.println(out.confidence);
-					System.out.println(out.protease.P_Symbol);
 				}
 			}
 			result.close();
@@ -351,7 +333,6 @@ public class DB_Protease extends DB_Conn {
 			}
 		}
 		int sizeoutprocessed = processedCSOutput.size();
-
 		QueryOutput[] result = new QueryOutput[sizeoutprocessed];
 		processedCSOutput.toArray(result);
 		return result;

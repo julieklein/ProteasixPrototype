@@ -20,7 +20,7 @@ public interface DBConnectionAsync {
 	public void getResultInfo(QueryInput[] inputObject,
 			AsyncCallback<QueryOutput[]> callback);
 
-	void sendMail(String to, String subject, String body, QueryOutput[] queryCSOut,
+	void sendMail(String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut,
 			AsyncCallback callback);
 
 	void setDebug(boolean debug, AsyncCallback callback);
@@ -32,7 +32,7 @@ public interface DBConnectionAsync {
 
 	void setSession(String user, String pass, AsyncCallback callback);
 
-	void runMailer(String to, String subject, String body, QueryOutput[] queryCSOut,
+	void runMailer(String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut,
 			AsyncCallback callback);
 
 }

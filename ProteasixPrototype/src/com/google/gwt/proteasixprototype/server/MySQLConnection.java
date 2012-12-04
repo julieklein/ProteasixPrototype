@@ -112,7 +112,7 @@ public class MySQLConnection extends RemoteServiceServlet implements
 	 * Sends a mail
 	 */
 	public void sendMail(String to, String subject, String body,
-			QueryOutput[] queryCSOut) {
+			QueryOutput[] queryCSOut, QueryOutput[] queryProtOut) {
 
 	
 
@@ -128,8 +128,6 @@ public class MySQLConnection extends RemoteServiceServlet implements
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		QueryOutput[] queryProtOut = getProteaseView(queryCSOut);
 
 		File file2 = new File("ProteaseView.txt");
 		try {
@@ -193,111 +191,6 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		}
 	}
 
-	private QueryOutput[] getProteaseView(QueryOutput[] queryCSOut) {
-		Map<String, List<Set<String>>> processedProteasehmap = new HashMap<String, List<Set<String>>>();
-		for (QueryOutput queryOutput : queryCSOut) {
-			String key = queryOutput.protease.P_Uniprotid;
-			if (!processedProteasehmap.containsKey(key)) {
-				List value = new ArrayList<Set<String>>();
-				for (int j = 0; j < 8; j++) {
-					value.add(new HashSet<String>());
-				}
-				processedProteasehmap.put(key, value);
-			}
-			processedProteasehmap.get(key).get(0)
-					.add(queryOutput.protease.P_Symbol);
-			processedProteasehmap.get(key).get(1)
-					.add(queryOutput.protease.P_Uniprotid);
-			if (queryOutput.confidence.equals(SPSL))
-				processedProteasehmap
-						.get(key)
-						.get(2)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(SS))
-				processedProteasehmap
-						.get(key)
-						.get(3)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			// else if (queryOutput.confidence.equals(HP))
-			// processedProteasehmap
-			// .get(key)
-			// .get(4)
-			// .add(queryOutput.peptide.Pep_Id
-			// + queryOutput.cleavagesite.CS_NorCterm);
-			// else if (queryOutput.confidence.equals(P))
-			// processedProteasehmap
-			// .get(key)
-			// .get(5)
-			// .add(queryOutput.peptide.Pep_Id
-			// + queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(mm1))
-				processedProteasehmap
-						.get(key)
-						.get(4)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(mm2))
-				processedProteasehmap
-						.get(key)
-						.get(5)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			else if (queryOutput.confidence.equals(mm3))
-				processedProteasehmap
-						.get(key)
-						.get(6)
-						.add(queryOutput.peptide.Pep_Id
-								+ queryOutput.cleavagesite.CS_NorCterm);
-			processedProteasehmap.get(key).get(7)
-					.add(queryOutput.protease.P_OMIM);
-		}
-
-		Iterator iterator = processedProteasehmap.values().iterator();
-		LinkedList<QueryOutput> processedProteaseOutput = new LinkedList<QueryOutput>();
-		while (iterator.hasNext()) {
-			int iSPSL = 0;
-			int iSS = 0;
-			int iHP = 0;
-			int iP = 0;
-			int i1mm = 0;
-			int i2mm = 0;
-			int i3mm = 0;
-			QueryOutput processedProtout = new QueryOutput();
-			ProteaseData protease = new ProteaseData();
-			String values = iterator.next().toString();
-			String splitarray[] = values.split("\\], \\[");
-			String protsymbol = splitarray[0];
-			protsymbol = protsymbol.replaceAll("\\[", "");
-			protease.P_Symbol = protsymbol;
-			protease.P_Uniprotid = splitarray[1];
-			String resultSPSL = splitarray[2];
-			protease.totalSPSL = getTotalProteaseConfidence(iSPSL, resultSPSL);
-			String resultSS = splitarray[3];
-			protease.totalSS = getTotalProteaseConfidence(iSS, resultSS);
-			// String resultHP = splitarray[4];
-			// protease.totalHP = getTotalProteaseConfidence(iHP, resultHP);
-			// String resultP = splitarray[5];
-			// protease.totalP = getTotalProteaseConfidence(iP, resultP);
-			String resultmm1 = splitarray[4];
-			protease.total1mm = getTotalProteaseConfidence(i1mm, resultmm1);
-			String resultmm2 = splitarray[5];
-			protease.total2mm = getTotalProteaseConfidence(i2mm, resultmm2);
-			String resultmm3 = splitarray[6];
-			protease.total3mm = getTotalProteaseConfidence(i3mm, resultmm3);
-			String omim = splitarray[7];
-			omim = omim.replaceAll("\\]", "");
-			protease.P_OMIM = omim;
-			processedProtout.setProtease(protease);
-			processedProteaseOutput.add(processedProtout);
-		}
-
-		QueryOutput[] queryProtOut = new QueryOutput[processedProteaseOutput
-				.size()];
-		processedProteaseOutput.toArray(queryProtOut);
-		return queryProtOut;
-	}
 
 	/*
 	 * Debug Message
@@ -309,11 +202,11 @@ public class MySQLConnection extends RemoteServiceServlet implements
 	}
 
 	public void runMailer(String to, String subject, String body,
-			QueryOutput[] queryCSOut) {
+			QueryOutput[] queryCSOut, QueryOutput[] queryProtOut) {
 
 		this.setProperties("proteasix@gmail.com", "smtp.gmail.com");
 		this.setSession("proteasix@gmail.com", "proteasix");
-		this.sendMail(to, subject, body, queryCSOut);
+		this.sendMail(to, subject, body, queryCSOut, queryProtOut);
 
 	}
 
