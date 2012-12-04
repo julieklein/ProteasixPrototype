@@ -1,0 +1,2 @@
+serviceClass: com.google.gwt.proteasixprototype.client.DBConnection
+path: 4368B19E8B7B4DCAD5F16435B75D7C61.gwt.rpc
