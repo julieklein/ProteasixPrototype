@@ -20,7 +20,7 @@ public class ProteaseData implements IsSerializable{
 	public String P_Uniprotid;
 	public String P_Ecnumber;
 	public String P_OMIM;
-	
+	public String P_Ensembl;
 	public int totalSPSL;
 	public int totalSS;
 	public int totalHP;

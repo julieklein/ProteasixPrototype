@@ -349,6 +349,10 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		csvWriter.print(out.protease.total3mm);
 		csvWriter.print("\t");
 		csvWriter.print(out.protease.totalSPSL + out.protease.totalSS + out.protease.total1mm + out.protease.total2mm + out.protease.total3mm);
+		csvWriter.print("\t");
+		csvWriter.print("http://omim.org/entry/" + out.protease.P_OMIM);
+		csvWriter.print("\t");
+		csvWriter.print("http://www.ebi.ac.uk/gxa/gene/" + out.protease.P_Ensembl);
 		csvWriter.print("\n");
 	}
 	
@@ -366,6 +370,10 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		csvWriter.print("Confidence +--");
 		csvWriter.print("\t");
 		csvWriter.print("Total");
+		csvWriter.print("\t");
+		csvWriter.print("OMIM");
+		csvWriter.print("\t");
+		csvWriter.print("Gene Expression Atlas");
 		csvWriter.print("\n");
 	}
 }

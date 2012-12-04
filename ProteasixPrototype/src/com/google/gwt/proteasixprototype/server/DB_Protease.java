@@ -277,6 +277,7 @@ public class DB_Protease extends DB_Conn {
 				protease.P_Symbol = result.getString("P_Symbol");
 				protease.P_Uniprotid = result.getString("P_UniprotID");
 				protease.P_OMIM = result.getString("Omim");
+				protease.P_Ensembl = result.getString("P_EnsemblID");
 				for (QueryInput queryInput : queryIn) {
 					QueryOutput out = new QueryOutput();
 					SubstrateData substrate2 = new SubstrateData();

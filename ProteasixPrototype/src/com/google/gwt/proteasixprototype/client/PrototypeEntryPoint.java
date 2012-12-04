@@ -276,7 +276,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		popupnoinput.setSize("300px", "200px");
 		popupnoinput.hide();
 
-		about.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_JUSTIFY);
+		about.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_LEFT);
 		about.add(new HTML(
 				"<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches (still taking amino-acid restrictions into account).<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
 		aboutTabPanel.add(about);
@@ -424,7 +424,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 				if (pepUniArea.getText().equals("")
 						|| pepStartEndArea.getText().equals("")) {
 					close.setUrl(GWT.getModuleBaseURL()
-							+ "Images/1353518245_Close.png");
+							+ "Images/1354635243_Close.png");
 					close.addStyleName("close");
 					pinput.add(close);
 					HTML lblniinput = new HTML("Please enter peptides");
@@ -448,7 +448,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 				} else if (sendemailChexbox.getValue() == true
 						&& !emailadressTextbox.getText().contains("@")) {
 					close1.setUrl(GWT.getModuleBaseURL()
-							+ "Images/1353518245_Close.png");
+							+ "Images/1354635243_Close.png");
 					close1.addStyleName("close");
 					pforgetemail.add(close1);
 					HTML lblforgetemail = new HTML(
@@ -488,7 +488,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 						updateSuggestBox();
 					}
 					close.setUrl(GWT.getModuleBaseURL()
-							+ "Images/1353518245_Close.png");
+							+ "Images/1354635243_Close.png");
 					close.addStyleName("close");
 					pemail.add(close);
 					HTML lblemail = new HTML(
@@ -999,7 +999,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 			String key = out.protease.P_Uniprotid;
 			if (!processedProteasehmap.containsKey(key)) {
 				List value = new ArrayList<Set<String>>();
-				for (int j = 0; j < 10; j++) {
+				for (int j = 0; j < 11; j++) {
 					value.add(new HashSet<String>());
 				}
 				processedProteasehmap.put(key, value);
@@ -1028,6 +1028,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 				processedProteasehmap.get(key).get(8)
 						.add(out.peptide.Pep_Id + out.cleavagesite.CS_NorCterm);
 			processedProteasehmap.get(key).get(9).add(out.protease.P_OMIM);
+			processedProteasehmap.get(key).get(10).add(out.protease.P_Ensembl);
 		}
 
 		Iterator iterator = processedProteasehmap.values().iterator();
@@ -1062,9 +1063,10 @@ public class PrototypeEntryPoint implements EntryPoint {
 			protease.total2mm = getTotalProteaseConfidence(i2mm, resultmm2);
 			String resultmm3 = splitarray[8];
 			protease.total3mm = getTotalProteaseConfidence(i3mm, resultmm3);
-			String omim = splitarray[9];
-			omim = omim.replaceAll("\\]", "");
-			protease.P_OMIM = omim;
+			protease.P_OMIM = splitarray[9];
+			String ensembl = splitarray[10];
+			ensembl = ensembl.replaceAll("\\]", "");
+			protease.P_Ensembl = ensembl;
 			processedProtout.setProtease(protease);
 			processedProteaseOutput.add(processedProtout);
 		}
@@ -1446,21 +1448,41 @@ public class PrototypeEntryPoint implements EntryPoint {
 			}
 		};
 
-		// Column<QueryOutput, SafeHtml> Prot_OMIM = new Column<QueryOutput,
-		// SafeHtml>(
-		// new SafeHtmlCell()) {
-		// @Override
-		// public SafeHtml getValue(QueryOutput result) {
-		// String omim = result.protease.P_OMIM;
-		// if (omim.equals("-"))
-		// return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
-		// return new SafeHtmlBuilder().appendHtmlConstant(
-		// "<a href=\"http://omim.org/entry/"
-		// + omim
-		// + "\"target=\"_blank\">" + omim + "</a>")
-		// .toSafeHtml();
-		// }
-		// };
+		
+		 Column<QueryOutput, SafeHtml> Prot_OMIM = new Column<QueryOutput,
+		 SafeHtml>(
+		 new SafeHtmlCell()) {
+		 @Override
+		 public SafeHtml getValue(QueryOutput result) {
+		 String omim = result.protease.P_OMIM;
+		 if (omim.equals("-"))
+		 return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
+		 return new SafeHtmlBuilder().appendHtmlConstant(
+		 "<a href=\"http://omim.org/entry/"
+		 + omim
+		 + "\"target=\"_blank\">" + omim + "</a>")
+		 .toSafeHtml();
+		 }
+		 };
+		 
+
+		 Column<QueryOutput, SafeHtml> Prot_Ensembl = new Column<QueryOutput,
+		 SafeHtml>(
+		 new SafeHtmlCell()) {
+		 @Override
+		 public SafeHtml getValue(QueryOutput result) {
+		 String ensembl = result.protease.P_Ensembl;
+		 if (ensembl.equals("N/A") || ensembl.equals("") )
+		 return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
+		 return new SafeHtmlBuilder().appendHtmlConstant(
+		 "<a href=\"http://www.ebi.ac.uk/gxa/gene/"
+		 + ensembl
+		 + "\"target=\"_blank\">" + ensembl + "</a>")
+		 .toSafeHtml();
+		 }
+		 };
+
+
 
 		Prot_Protease.setSortable(true);
 		Prot_ConfidenceSPSL.setSortable(true);
@@ -1487,8 +1509,11 @@ public class PrototypeEntryPoint implements EntryPoint {
 		proteaseTable.addColumn(Prot_Confidencemm3,
 				"\u25B2Confidence +---\u25BC");
 		proteaseTable.addColumn(Prot_TOTAL, "\u25B2Total\u25BC");
-		// proteaseTable.addColumn(Prot_OMIM, "OMIM");
-		//
+		proteaseTable.addColumn(Prot_OMIM, "OMIM");
+		proteaseTable.addColumn(Prot_Ensembl, "Gene Expression Atlas");
+		proteaseTable.setColumnWidth(Prot_OMIM, 5, Unit.EM);
+		proteaseTable.setColumnWidth(Prot_Ensembl, 5, Unit.EM);
+		
 		Proteaseresult.add(proteaseTable);
 		// Create a data provider.
 		ListDataProvider<QueryOutput> csdataProvider = new ListDataProvider<QueryOutput>();
