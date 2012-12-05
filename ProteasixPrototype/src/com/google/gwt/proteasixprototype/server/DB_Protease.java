@@ -1,9 +1,14 @@
 package com.google.gwt.proteasixprototype.server;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -330,6 +335,21 @@ public class DB_Protease extends DB_Conn {
 						: "B";
 				processedOut.mm3 = queryOutput.confidence.equals(mm3) ? "A"
 						: "B";
+				String htmlcontent1 = getHtmlcontent(
+						new URL(
+								"http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.substrate.S_Uniprotid + "_" +  queryOutput.protease.P_Uniprotid + "&class=Association"))
+						.toString();
+				String htmlcontent2 = getHtmlcontent(
+						new URL(
+								"http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.protease.P_Uniprotid + "_" +  queryOutput.substrate.S_Uniprotid + "&class=Association"))
+						.toString();
+				if (!htmlcontent1.contains("not found")) {
+					processedOut.MatrixDB = "http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.substrate.S_Uniprotid + "_" +  queryOutput.protease.P_Uniprotid + "&class=Association";
+				} else if (!htmlcontent2.contains("not found")) {
+					processedOut.MatrixDB = "http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.protease.P_Uniprotid + "_" +  queryOutput.substrate.S_Uniprotid + "&class=Association";
+				} else {
+					processedOut.MatrixDB = "-";
+				}
 				processedCSOutput.add(processedOut);
 			}
 		}
@@ -339,6 +359,22 @@ public class DB_Protease extends DB_Conn {
 		return result;
 	}
 
+	private StringBuilder getHtmlcontent(URL u) throws IOException {
+		InputStream is = null;
+		DataInputStream dis;
+		String s = null;
+		StringBuilder htmlcontent = new StringBuilder();
+
+		is = u.openStream();
+		dis = new DataInputStream(new BufferedInputStream(is));
+		while ((s = dis.readLine()) != null) {
+			s = s.replaceAll("\\?", "");
+			htmlcontent.append(s);
+		}
+		is.close();
+		return htmlcontent;
+	}
+	
 	private QueryOutput process(Statement s, ResultSet result,
 			ProteaseData protease, QueryInput queryInput, QueryOutput out,
 			SubstrateData substrate, PeptideData peptide, CleavageSiteData cs)

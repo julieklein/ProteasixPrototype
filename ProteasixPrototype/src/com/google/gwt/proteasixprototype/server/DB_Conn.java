@@ -33,10 +33,15 @@ public class DB_Conn {
 //		        String usermame = "protuser";
 //		        String pwd = "kschoicesql";
 			 
-		        String host = "jdbc:mysql://localhost:3306/";
+			 	String host = "jdbc:mysql://localhost:3306/";
 		        String dbName = "Proteasix8";
-		        String usermame = "root";
+		        String usermame = "protuser";
 		        String pwd = "kschoicesql";
+			 
+//		        String host = "jdbc:mysql://localhost:3306/";
+//		        String dbName = "Proteasix8";
+//		        String usermame = "root";
+//		        String pwd = "kschoicesql";
 		        conn = DriverManager.getConnection(host + dbName + "?user=" + usermame +"&password=" + pwd);
         
 		        System.out.println("Connection Success");

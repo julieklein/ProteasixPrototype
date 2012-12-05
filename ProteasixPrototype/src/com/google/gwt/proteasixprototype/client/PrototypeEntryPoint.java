@@ -7,12 +7,17 @@ import com.google.gwt.core.client.*;
 import com.google.gwt.cell.client.SafeHtmlCell;
 import com.google.gwt.core.client.EntryPoint;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -235,7 +240,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		ploading.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		ploading.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
 		ploading.add(new HTML("<div><br /><br /><div>"));
-		loading.setUrl(GWT.getModuleBaseURL() + "Images/ajax-loader(1).gif");
+		loading.setUrl(GWT.getModuleBaseURL() + "Images/ajax-loader.gif");
 		ploading.add(loading);
 		ploading.add(lbl);
 		lbl.addStyleName("lResult");
@@ -726,7 +731,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 				// TODO modify here
 				// draw PEPTIDE info
 
-				drawResultbyPeptideInfo_2(queryOut);
+					drawResultbyPeptideInfo_2(queryOut);
+				
 
 			}
 		};
@@ -1138,6 +1144,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		return processedCSValidityOKList;
 	}
 
+	
 	private int getTotalProteaseConfidence(int iConfidence,
 			String resultConfidence) {
 		if (!resultConfidence.equals("")) {
@@ -1458,7 +1465,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		 if (omim.equals("-"))
 		 return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
 		 return new SafeHtmlBuilder().appendHtmlConstant(
-		 "<a href=\"http://omim.org/entry/"
+		 "<font size=\"1\"><a href=\"http://omim.org/entry/"
 		 + omim
 		 + "\"target=\"_blank\">" + omim + "</a>")
 		 .toSafeHtml();
@@ -1475,7 +1482,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		 if (ensembl.equals("N/A") || ensembl.equals("") )
 		 return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
 		 return new SafeHtmlBuilder().appendHtmlConstant(
-		 "<a href=\"http://www.ebi.ac.uk/gxa/gene/"
+		 "<font size=\"1\"><a href=\"http://www.ebi.ac.uk/gxa/gene/"
 		 + ensembl
 		 + "\"target=\"_blank\">" + ensembl + "</a>")
 		 .toSafeHtml();
@@ -1866,6 +1873,20 @@ public class PrototypeEntryPoint implements EntryPoint {
 						.toSafeHtml();
 			}
 		};
+		
+		Column<QueryOutput, SafeHtml> CS_MatrixDB= new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String symbol = result.MatrixDB;
+				String interaction = null;
+				interaction = !symbol.equals("-") ? "<a href=\""+ symbol
+						+ "\"target=\"_blank\">Yes</a>" : "-";
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						interaction)
+						.toSafeHtml();
+			}
+		};
 
 		Column<QueryOutput, SafeHtml> CS_ConfidenceSPSL = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
@@ -2052,6 +2073,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		CS_PepID.setSortable(true);
 		CS_Substrate.setSortable(true);
 		CS_Protease.setSortable(true);
+		CS_MatrixDB.setSortable(true);
 		CS_CSSeq.setSortable(true);
 		CS_ConfidenceSPSL.setSortable(true);
 		CS_ConfidenceSS.setSortable(true);
@@ -2067,6 +2089,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		csTable.addColumn(CS_PepSeq, "Peptide Sequence");
 		csTable.addColumn(CS_CSSeq, "\u25B2Searched\u25BC CS");
 		csTable.addColumn(CS_Protease, "\u25B2Protease\u25BC");
+		csTable.addColumn(CS_MatrixDB, "\u25B2Interaction\u25BC in MatrixDB");
 		csTable.addColumn(CS_ConfidenceSPSL, "\u25B2Confidence\u25BC ++++");
 		csTable.addColumn(CS_ConfidenceSS, "\u25B2Confidence\u25BC +++");
 		// csTable.addColumn(CS_ConfidenceHP, "\u25B2Confidence\u25BC ++");
@@ -2082,8 +2105,9 @@ public class PrototypeEntryPoint implements EntryPoint {
 		csTable.setColumnWidth(CS_PepSeq, 10, Unit.EM);
 		csTable.setColumnWidth(CS_CSSeq, 10, Unit.EM);
 		csTable.setColumnWidth(CS_Protease, 5, Unit.EM);
-		// csTable.setColumnWidth(extlinkCol, 5, Unit.EM);
-		// csTable.setColumnWidth(pmidCol, 5, Unit.EM);
+		csTable.setColumnWidth(CS_MatrixDB, 5, Unit.EM);
+		csTable.setColumnWidth(extlinkCol, 5, Unit.EM);
+		csTable.setColumnWidth(pmidCol, 5, Unit.EM);
 		//
 		CSresult.add(csTable);
 
@@ -2175,6 +2199,30 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		// We know that the data is sorted alphabetically by default.
 		csTable.getColumnSortList().push(CS_Protease);
+		
+		ListHandler<QueryOutput> matrixDBColSortHandler = new ListHandler<QueryOutput>(
+				cslist);
+		matrixDBColSortHandler.setComparator(CS_MatrixDB,
+				new Comparator<QueryOutput>() {
+					public int compare(QueryOutput o1, QueryOutput o2) {
+						if (o1 == o2) {
+							return 0;
+						}
+
+						// Compare the symbol columns.
+						if (o1 != null) {
+							return (o2 != null) ? o1.MatrixDB
+									.toUpperCase().compareTo(
+											o2.MatrixDB.toUpperCase())
+									: 1;
+						}
+						return -1;
+					}
+				});
+		csTable.addColumnSortHandler(matrixDBColSortHandler);
+
+		// We know that the data is sorted alphabetically by default.
+		csTable.getColumnSortList().push(CS_MatrixDB);
 
 		// Add a ColumnSortEvent.ListHandler to connect sorting to the
 		// java.util.List.

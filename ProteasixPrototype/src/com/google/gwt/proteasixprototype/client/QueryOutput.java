@@ -15,7 +15,7 @@ public class QueryOutput implements IsSerializable{
 	public String mm1;
 	public String mm2;
 	public String mm3;
-	
+	public String MatrixDB;
 	public String test;
 
 	

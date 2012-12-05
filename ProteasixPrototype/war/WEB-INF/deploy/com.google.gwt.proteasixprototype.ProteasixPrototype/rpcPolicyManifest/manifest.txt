@@ -1,2 +1,3 @@
 # Module com.google.gwt.proteasixprototype.ProteasixPrototype
 # RPC service class, partial path of RPC policy file
+com.google.gwt.proteasixprototype.client.DBConnection, A5BC7D0C6D6DF1F181CF6272F1454747.gwt.rpc
