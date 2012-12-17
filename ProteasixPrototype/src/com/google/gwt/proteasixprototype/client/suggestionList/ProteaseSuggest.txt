@@ -1,0 +1,350 @@
+MMP2, 72 kDa type IV collagenase
+ADAMTS1, A disintegrin and metalloproteinase with thrombospondin motifs 1
+ADAMTS12, A disintegrin and metalloproteinase with thrombospondin motifs 12
+ADAMTS13, A disintegrin and metalloproteinase with thrombospondin motifs 13
+ADAMTS15, A disintegrin and metalloproteinase with thrombospondin motifs 15
+ADAMTS2, A disintegrin and metalloproteinase with thrombospondin motifs 2
+ADAMTS4, A disintegrin and metalloproteinase with thrombospondin motifs 4
+ADAMTS5, A disintegrin and metalloproteinase with thrombospondin motifs 5
+ADAMTS8, A disintegrin and metalloproteinase with thrombospondin motifs 8
+ADAMTS9, A disintegrin and metalloproteinase with thrombospondin motifs 9
+ASAH1, Acid ceramidase
+AQPEP, Aminopeptidase Q
+ACE, Angiotensin-converting enzyme
+ACE2, Angiotensin-converting enzyme 2
+CORIN, Atrial natriuretic peptide-converting enzyme
+BACE1, Beta-secretase 1
+BACE2, Beta-secretase 2
+BMP1, Bone morphogenetic protein 1
+ZMPSTE24, CAAX prenyl protease 1 homolog
+CAPN1, Calpain-1 catalytic subunit
+CAPN10, Calpain-10
+CAPN2, Calpain-2 catalytic subunit
+CAPN3, Calpain-3
+CAPN8, Calpain-8
+CPE, Carboxypeptidase E
+CPM, Carboxypeptidase M
+CASP1, Caspase-1
+CASP10, Caspase-10
+CASP2, Caspase-2
+CASP3, Caspase-3
+CASP4, Caspase-4
+CASP5, Caspase-5
+CASP6, Caspase-6
+CASP7, Caspase-7
+CASP8, Caspase-8
+CASP9, Caspase-9
+CTSB, Cathepsin B
+CTSD, Cathepsin D
+CTSE, Cathepsin E
+CTSG, Cathepsin G
+CTSK, Cathepsin K
+CTSL1, Cathepsin L1
+CTSL2, Cathepsin L2
+CTSS, Cathepsin S
+CTSZ, Cathepsin Z
+CMA1, Chymase
+CTRC, Chymotrypsin-C
+CELA1, Chymotrypsin-like elastase family member 1
+CTRB1, Chymotrypsinogen B
+F9, Coagulation factor IX
+F7, Coagulation factor VII
+F10, Coagulation factor X
+F11, Coagulation factor XI
+F12, Coagulation factor XII
+MMP13, Collagenase 3
+C1R, Complement C1r subcomponent
+C1S, Complement C1s subcomponent
+C2, Complement C2
+CFI, Complement factor I
+ATG4A, Cysteine protease ATG4A
+ATG4B, Cysteine protease ATG4B
+yopT, Cysteine protease yopT
+DHH, Desert hedgehog protein
+DPP4, Dipeptidyl peptidase 4
+ADAM10, Disintegrin and metalloproteinase domain-containing protein 10
+ADAM15, Disintegrin and metalloproteinase domain-containing protein 15
+ADAM17, Disintegrin and metalloproteinase domain-containing protein 17
+ADAM19, Disintegrin and metalloproteinase domain-containing protein 19
+ADAM28, Disintegrin and metalloproteinase domain-containing protein 28
+ADAM33, Disintegrin and metalloproteinase domain-containing protein 33
+ADAM8, Disintegrin and metalloproteinase domain-containing protein 8
+ADAM9, Disintegrin and metalloproteinase domain-containing protein 9
+DAG1, Dystroglycan
+EMR2, EGF-like module-containing mucin-like hormone receptor-like 2
+ERAP1, Endoplasmic reticulum aminopeptidase 1
+ECE1, Endothelin-converting enzyme 1
+ECE2, Endothelin-converting enzyme 2
+FURIN, Furin
+GPR56, G-protein coupled receptor 56
+PSENEN, Gamma-secretase subunit PEN-2
+PGC, Gastricsin
+ENPEP, Glutamyl aminopeptidase
+GZMA, Granzyme A
+GZMB, Granzyme B
+GZMK, Granzyme K
+GZMM, Granzyme M
+null, Hementin
+HCFC1, Host cell factor 1
+HABP2, Hyaluronan-binding protein 2
+IHH, Indian hedgehog protein
+MMP1, Interstitial collagenase
+KLK1, Kallikrein-1
+KLK13, Kallikrein-13
+KLK14, Kallikrein-14
+KLK15, Kallikrein-15
+KLK2, Kallikrein-2
+KLK4, Kallikrein-4
+KLK5, Kallikrein-5
+KLK6, Kallikrein-6
+KLK7, Kallikrein-7
+KEL, Kell blood group glycoprotein
+LPHN1, Latrophilin-1
+LGMN, Legumain
+PRCP, Lysosomal Pro-X carboxypeptidase
+CTSA, Lysosomal protective protein
+MMP12, Macrophage metalloelastase
+MASP1, Mannan-binding lectin serine protease 1
+MASP2, Mannan-binding lectin serine protease 2
+MMP7, Matrilysin
+MMP14, Matrix metalloproteinase-14
+MMP15, Matrix metalloproteinase-15
+MMP16, Matrix metalloproteinase-16
+MMP17, Matrix metalloproteinase-17
+MMP19, Matrix metalloproteinase-19
+MMP20, Matrix metalloproteinase-20
+MMP23A, Matrix metalloproteinase-23
+MMP24, Matrix metalloproteinase-24
+MMP25, Matrix metalloproteinase-25
+MMP26, Matrix metalloproteinase-26
+MMP9, Matrix metalloproteinase-9
+MBTPS1, Membrane-bound transcription factor site-1 protease
+MBTPS2, Membrane-bound transcription factor site-2 protease
+MEP1A, Meprin A subunit alpha
+MEP1B, Meprin A subunit beta
+PMPCB, Mitochondrial-processing peptidase subunit beta
+MUC1, Mucin-1
+MUC2, Mucin-2
+MBP, Myelin basic protein
+PRTN3, Myeloblastin
+AGA, N(4)-(beta-N-acetylglucosaminyl)-L-asparaginase
+NAPSA, Napsin-A
+MME, Neprilysin
+PCSK1, Neuroendocrine convertase 1
+PCSK2, Neuroendocrine convertase 2
+NLN, Neurolysin mitochondrial
+PRSS12, Neurotrypsin
+MMP8, Neutrophil collagenase
+ELANE, Neutrophil elastase
+PAPPA, Pappalysin-1
+PAPPA2, Pappalysin-2
+PGA5, Pepsin A-5
+PHEX, Phosphate-regulating neutral endopeptidase
+KLKB1, Plasma kallikrein
+PLG, Plasminogen
+PKD1, Polycystin-1
+PSEN1, Presenilin-1
+PSEN2, Presenilin-2
+PARL, Presenilins-associated rhomboid-like protein mitochondrial
+PITRM1, Presequence protease mitochondrial
+CTSH, Pro-cathepsin H
+PREP, Prolyl endopeptidase
+PCSK5, Proprotein convertase subtilisin/kexin type 5
+PCSK6, Proprotein convertase subtilisin/kexin type 6
+PCSK7, Proprotein convertase subtilisin/kexin type 7
+PCSK9, Proprotein convertase subtilisin/kexin type 9
+KLK3, Prostate-specific antigen
+PSMB10, Proteasome subunit beta type-10
+PSMB8, Proteasome subunit beta type-8
+PSMB9, Proteasome subunit beta type-9
+F2, Prothrombin
+REN, Renin
+RHBDD1, Rhomboid domain-containing protein 1
+AMD1, S-adenosylmethionine decarboxylase proenzyme
+SENP1, Sentrin-specific protease 1
+SENP2, Sentrin-specific protease 2
+SENP5, Sentrin-specific protease 5
+SENP8, Sentrin-specific protease 8
+ESPL1, Separin
+FAP, Seprase
+HPN, Serine protease hepsin
+HTRA1, Serine protease HTRA1
+HTRA2, Serine protease HTRA2 mitochondrial
+SPPL2A, Signal peptide peptidase-like 2A
+SPPL2B, Signal peptide peptidase-like 2B
+STAT5A, Signal transducer and activator of transcription 5A
+STAT5B, Signal transducer and activator of transcription 5B
+SHH, Sonic hedgehog protein
+MMP3, Stromelysin-1
+MMP10, Stromelysin-2
+MMP11, Stromelysin-3
+ST14, Suppressor of tumorigenicity 14 protein
+npr, Thermolysin
+TASP1, Threonine aspartase 1
+PLAT, Tissue-type plasminogen activator
+TLL1, Tolloid-like protein 1
+TMPRSS2, Transmembrane protease serine 2
+TMPRSS6, Transmembrane protease serine 6
+TTR, Transthyretin
+TPP1, Tripeptidyl-peptidase 1
+PRSS1, Trypsin-1
+PRSS2, Trypsin-2
+PRSS3, Trypsin-3
+TPSAB1, Tryptase alpha/beta-1
+TPSB2, Tryptase beta-2
+USP1, Ubiquitin carboxyl-terminal hydrolase 1
+UCHL3, Ubiquitin carboxyl-terminal hydrolase isozyme L3
+PLAU, Urokinase-type plasminogen activator
+PROC, Vitamin K-dependent protein C
+MALT1, Mucosa-associated lymphoid tissue lymphoma translocation protein 1
+Mmp2, 72 kDa type IV collagenase
+Adamts2, A disintegrin and metalloproteinase with thrombospondin motifs 2
+Corin, Atrial natriuretic peptide-converting enzyme
+Bace1, Beta-secretase 1
+Bace2, Beta-secretase 2
+Bmp1, Bone morphogenetic protein 1
+Capn1, Calpain-1 catalytic subunit
+Capn2, Calpain-2 catalytic subunit
+Capn3, Calpain-3
+Cpe, Carboxypeptidase E
+Casp1, Caspase-1
+Casp12, Caspase-12
+Casp2, Caspase-2
+Casp3, Caspase-3
+Casp4, Caspase-4
+Casp6, Caspase-6
+Casp7, Caspase-7
+Casp8, Caspase-8
+Ctsb, Cathepsin B
+Ctsj, Cathepsin J
+Ctsk, Cathepsin K
+Ctsl1, Cathepsin L1
+F9, Coagulation factor IX
+F10, Coagulation factor X
+F11, Coagulation factor XI
+F12, Coagulation factor XII
+C2, Complement C2
+Cfi, Complement factor I
+Dhh, Desert hedgehog protein
+Adam10, Disintegrin and metalloproteinase domain-containing protein 10
+Adam12, Disintegrin and metalloproteinase domain-containing protein 12
+Adam15, Disintegrin and metalloproteinase domain-containing protein 15
+Adam17, Disintegrin and metalloproteinase domain-containing protein 17
+Adam19, Disintegrin and metalloproteinase domain-containing protein 19
+Adam28, Disintegrin and metalloproteinase domain-containing protein 28
+Adam33, Disintegrin and metalloproteinase domain-containing protein 33
+Adam8, Disintegrin and metalloproteinase domain-containing protein 8
+Adam9, Disintegrin and metalloproteinase domain-containing protein 9
+Dag1, Dystroglycan
+Furin, Furin
+Gpr56, G-protein coupled receptor 56
+Psenen, Gamma-secretase subunit PEN-2
+Gzma, Granzyme A
+Gzmb, Granzyme B(GH)
+Mst1, Hepatocyte growth factor-like protein
+Hcfc1, Host cell factor 1
+Ihh, Indian hedgehog protein
+Klk1b3, Kallikrein 1-related peptidase b3
+Klk1b9, Kallikrein 1-related peptidase b9
+Klk1, Kallikrein-1
+Klk8, Kallikrein-8
+Kel, Kell blood group glycoprotein homolog
+Lphn1, Latrophilin-1
+Lgmn, Legumain
+Mmp12, Macrophage metalloelastase
+Masp1, Mannan-binding lectin serine protease 1
+Mmp7, Matrilysin
+Mmp14, Matrix metalloproteinase-14
+Mmp24, Matrix metalloproteinase-24
+Mmp9, Matrix metalloproteinase-9
+Mbtps1, Membrane-bound transcription factor site-1 protease
+Mbtps2, Membrane-bound transcription factor site-2 protease
+Mep1a, Meprin A subunit alpha
+Mep1b, Meprin A subunit beta
+Muc1, Mucin-1
+Prtn3, Myeloblastin
+Pcsk1, Neuroendocrine convertase 1
+Pcsk2, Neuroendocrine convertase 2
+Mmp8, Neutrophil collagenase
+Pappa, Pappalysin-1
+Tysnd1, Peroxisomal leader peptide-processing protease
+Plg, Plasminogen
+Pkd1, Polycystin-1
+Psen1, Presenilin-1
+Psen2, Presenilin-2
+Pcsk5, Proprotein convertase subtilisin/kexin type 5
+Pcsk7, Proprotein convertase subtilisin/kexin type 7
+Pcsk9, Proprotein convertase subtilisin/kexin type 9
+Prss8, Prostasin
+Psmb10, Proteasome subunit beta type-10
+Psmb8, Proteasome subunit beta type-8
+Psmb9, Proteasome subunit beta type-9
+F2, Prothrombin
+Amd1, S-adenosylmethionine decarboxylase proenzyme 1
+Amd2, S-adenosylmethionine decarboxylase proenzyme 2
+Espl1, Separin
+Sppl2a, Signal peptide peptidase-like 2A
+Sppl2b, Signal peptide peptidase-like 2B
+Shh, Sonic hedgehog protein
+Mmp11, Stromelysin-3
+St14, Suppressor of tumorigenicity 14 protein homolog
+Tasp1, Threonine aspartase 1
+Tmprss11c, to check
+Tll1, Tolloid-like protein 1
+Tmprss7, Transmembrane protease serine 7
+Usp1, Ubiquitin carboxyl-terminal hydrolase 1
+Plau, Urokinase-type plasminogen activator
+Proc, Vitamin K-dependent protein C
+Mmp2, 72 kDa type IV collagenase
+Prss1, Anionic trypsin-1
+Corin, Atrial natriuretic peptide-converting enzyme
+Bace1, Beta-secretase 1
+Bace2, Beta-secretase 2
+Capn1, Calpain-1 catalytic subunit
+Capn2, Calpain-2 catalytic subunit
+Capn3, Calpain-3
+Casp12, Caspase-12
+Casp3, Caspase-3
+Casp6, Caspase-6
+Ctsl1, Cathepsin L1
+F9, Coagulation factor IX
+F10, Coagulation factor X
+F12, Coagulation factor XII
+Mmp13, Collagenase 3
+Cfi, Complement factor I
+Adam10, Disintegrin and metalloproteinase domain-containing protein 10
+Adam17, Disintegrin and metalloproteinase domain-containing protein 17
+Adam2, Disintegrin and metalloproteinase domain-containing protein 2
+Furin, Furin
+Gpr56, G-protein coupled receptor 56
+Psenen, Gamma-secretase subunit PEN-2
+Klk10, Glandular kallikrein-10
+Gzmb, Granzyme B
+Ide, Insulin-degrading enzyme
+Ngfg, Kallikrein-1
+Lphn1, Latrophilin-1
+Lgmn, Legumain
+Masp1, Mannan-binding lectin serine protease 1
+Mmp7, Matrilysin
+Mmp14, Matrix metalloproteinase-14
+Mbtps1, Membrane-bound transcription factor site-1 protease
+Mme, Neprilysin
+Pcsk1, Neuroendocrine convertase 1
+Pcsk2, Neuroendocrine convertase 2
+Plg, Plasminogen
+Psen1, Presenilin-1
+Pcsk5, Proprotein convertase subtilisin/kexin type 5
+Pcsk6, Proprotein convertase subtilisin/kexin type 6
+Pcsk7, Proprotein convertase subtilisin/kexin type 7
+Pcsk9, Proprotein convertase subtilisin/kexin type 9
+Psmb10, Proteasome subunit beta type-10
+Psmb8, Proteasome subunit beta type-8
+Psmb9, Proteasome subunit beta type-9
+F2, Prothrombin
+Sppl2b, Signal peptide peptidase-like 2B
+Shh, Sonic hedgehog protein
+Mmp3, Stromelysin-1
+Mmp11, Stromelysin-3
+Klk2, Tonin
+Usp1, Ubiquitin carboxyl-terminal hydrolase 1
+Plau, Urokinase-type plasminogen activator

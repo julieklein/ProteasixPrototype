@@ -1,5 +1,6 @@
 /** Add css rules here for your application. */
 /** Example rules used by the template application (remove for your app) */
+
 h1 {
 	color: #fbfefd  !important;
 	margin: 40px 0px 70px;
@@ -74,10 +75,11 @@ a,a:visited,a:hover {
 .close{
 	cursor: pointer;
 	cursor: hand;
-	position: relative;
-	top: 100 px;
-	right: 100 px;
+/*	position: relative;*/
+	vertical-align : top !important;
+	float:right !important;
 }
+
 
 .gwt-Button:active {
 	border: 1px inset #ccc;

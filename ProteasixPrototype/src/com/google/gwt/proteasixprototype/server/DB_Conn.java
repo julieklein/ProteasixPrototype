@@ -27,17 +27,19 @@ public class DB_Conn {
 		 Connection conn = null;
 	 
 		 try {
-//			 
-//			 	String host = "jdbc:mysql://localhost:3406/";
-//		        String dbName = "Proteasix8";
-//		        String usermame = "protuser";
-//		        String pwd = "kschoicesql";
-			 
-			 	String host = "jdbc:mysql://localhost:3306/";
+//			 	//BHIG
+			 	String host = "jdbc:mysql://localhost:3406/";
 		        String dbName = "Proteasix8";
 		        String usermame = "protuser";
 		        String pwd = "kschoicesql";
 			 
+		        //INSERM
+//			 	String host = "jdbc:mysql://localhost:3306/";
+//		        String dbName = "Proteasix8";
+//		        String usermame = "protuser";
+//		        String pwd = "kschoicesql";
+			 
+		        //LOCAL
 //		        String host = "jdbc:mysql://localhost:3306/";
 //		        String dbName = "Proteasix8";
 //		        String usermame = "root";

@@ -9,7 +9,8 @@
 	<classpathentry kind="lib" path="/Users/julieklein/gwt-2.4.0/gwt-user.jar"/>
 	<classpathentry kind="lib" path="/Users/julieklein/gwt-2.4.0/gwt-dev.jar"/>
 	<classpathentry kind="lib" path="/Users/julieklein/Downloads/advanced-gwt-2.0.8.jar"/>
-	<classpathentry kind="lib" path="/Users/julieklein/Downloads/javamail-1.4.5/mail.jar"/>
-	<classpathentry kind="lib" path="/Applications/Cytoscape_v2.7.0/lib/activation.jar"/>
+	<classpathentry kind="lib" path="/Users/julieklein/Downloads/javamail-1.4.5/mail.jar" sourcepath="/Users/julieklein/Documents/proteasix_wars/ProteasixPrototype/WEB-INF/lib/mail.jar"/>
+	<classpathentry kind="lib" path="/Users/julieklein/Downloads/activation.jar/activation.jar"/>
+	<classpathentry kind="lib" path="/Users/julieklein/Downloads/javax.activation.jar/javax.activation.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

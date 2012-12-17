@@ -7,94 +7,61 @@ import com.google.gwt.core.client.*;
 import com.google.gwt.cell.client.SafeHtmlCell;
 import com.google.gwt.core.client.EntryPoint;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.Semaphore;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import java_cup.parse_action;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyPressEvent;
-import com.google.gwt.event.dom.client.KeyPressHandler;
-import com.google.gwt.event.logical.shared.CloseEvent;
-import com.google.gwt.event.logical.shared.CloseHandler;
-import com.google.gwt.event.logical.shared.OpenEvent;
-import com.google.gwt.event.logical.shared.OpenHandler;
-import com.google.gwt.i18n.client.NumberFormat;
-import com.google.gwt.proteasixprototype.client.CleavageSiteData;
+import com.google.gwt.event.logical.shared.SelectionEvent;
+import com.google.gwt.event.logical.shared.SelectionHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
+
+import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.proteasixprototype.client.DBConnection;
 import com.google.gwt.proteasixprototype.client.DBConnectionAsync;
 import com.google.gwt.proteasixprototype.client.PeptideData;
 import com.google.gwt.proteasixprototype.client.ProteaseData;
 import com.google.gwt.proteasixprototype.client.SubstrateData;
+import com.google.gwt.resources.client.ClientBundle;
+import com.google.gwt.resources.client.TextResource;
 import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.DisclosureHandler;
-import com.google.gwt.user.client.ui.DisclosurePanel;
-import com.google.gwt.user.client.ui.DisclosurePanelImages;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
-import com.google.gwt.user.client.ui.HasWidgets.ForIsWidget;
+import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.LoadListener;
 import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.TabLayoutPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.SuggestBox;
-import com.google.gwt.user.client.ui.TabPanel;
-import com.google.gwt.user.client.ui.DecoratorPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
 import com.google.gwt.user.cellview.client.TextColumn;
-import com.google.gwt.user.client.ui.DecoratedTabBar;
-import com.google.gwt.user.client.ui.DecoratedStackPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.view.client.ListDataProvider;
-import com.mysql.jdbc.jdbc2.optional.SuspendableXAConnection;
-import com.sun.org.apache.bcel.internal.generic.NEW;
-import com.sun.source.tree.NewClassTree;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.util.QEncoderStream;
+
 
 public class PrototypeEntryPoint implements EntryPoint {
 
@@ -114,6 +81,68 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 	private FlowPanel aboutTabPanel = new FlowPanel();
 	private VerticalPanel about = new VerticalPanel();
+	private FlowPanel dlTabPanel = new FlowPanel();
+	private VerticalPanel dl = new VerticalPanel();
+	private TextBox dlbox = new TextBox();
+	private Button dlbutton = new Button("Download");
+	private FlowPanel collaborativeTabPanel = new FlowPanel();
+	private DecoratedTabPanel collaborativeOptions = new DecoratedTabPanel();
+	private FlowPanel addstatement = new FlowPanel();
+	private HorizontalPanel addstatementHP = new HorizontalPanel();
+	private VerticalPanel selectProteaseVP = new VerticalPanel();
+
+	interface ProteaseResources extends ClientBundle {
+		ProteaseResources INSTANCE = GWT.create(ProteaseResources.class);
+
+		@Source("/suggestionList/ProteaseSuggest.txt")
+		TextResource synchronous();
+	}
+
+	private SuggestBox proteaseSelection;
+	private MultiWordSuggestOracle oracle3 = new MultiWordSuggestOracle();
+	private VerticalPanel eventVP = new VerticalPanel();
+	private ListBox eventSuggestion = new ListBox();
+	private VerticalPanel statusVP = new VerticalPanel();
+	private ListBox statusSuggestion = new ListBox();
+	private VerticalPanel diseaseVP = new VerticalPanel();
+
+	interface DiseaseResources extends ClientBundle {
+		DiseaseResources INSTANCE = GWT.create(DiseaseResources.class);
+
+		@Source("/suggestionList/HumanDiseaseSuggest.txt")
+		TextResource synchronous();
+	}
+
+	private MultiWordSuggestOracle oracle2 = new MultiWordSuggestOracle();
+	private SuggestBox diseaseSelection;
+	private VerticalPanel anatomyVP = new VerticalPanel();
+	private MultiWordSuggestOracle oracle4 = new MultiWordSuggestOracle();
+	private SuggestBox anatomySelection;
+	private VerticalPanel speciesVP = new VerticalPanel();
+	private ListBox speciesList = new ListBox();
+	private VerticalPanel detailsVP = new VerticalPanel();
+	private TextArea details = new TextArea();
+
+	private VerticalPanel referenceVP = new VerticalPanel();
+	private TextBox statementreference = new TextBox();
+	private VerticalPanel buttonVP = new VerticalPanel();
+	private Button exampleStatButton = new Button("See the example!");
+	private Button deleteStatButton = new Button("Delete");
+	private Button checkStatButton = new Button("Check your statement");
+	private TextBox statementcontributor = new TextBox();
+	private HorizontalPanel checkStatementHP = new HorizontalPanel();
+
+	private FlowPanel viewstatement = new FlowPanel();
+	private HorizontalPanel viewstatementHP = new HorizontalPanel();
+	private MenuBar proteasemenu = new MenuBar(true);
+	private MenuBar proteaselistmenu = new MenuBar(true);
+
+	interface StatementResources extends ClientBundle {
+		StatementResources INSTANCE = GWT.create(StatementResources.class);
+
+		@Source("Statements.html")
+		TextResource synchronous();
+	}
 
 	private FlowPanel searchTabPanel = new FlowPanel();
 	private HorizontalPanel searchPanel = new HorizontalPanel();
@@ -131,14 +160,12 @@ public class PrototypeEntryPoint implements EntryPoint {
 	private HorizontalPanel emailaddressPanel = new HorizontalPanel();
 	private MultiWordSuggestOracle oracle;
 	private static long forgetMeIn = 1000 * 60 * 60 * 24 * 365 * 30; // 30 years
-	private SuggestBox emailadressTextbox;
+	private TextBox emailadressTextbox = new TextBox();
 	private Label emailadressLabel = new Label(
 			"Please enter email adress (optional): ");
 	private VerticalPanel checkemailaddressPanel = new VerticalPanel();
 	private CheckBox sendemailChexbox = new CheckBox(
 			"Send result tables as email");
-	private CheckBox rememberemailChexbox = new CheckBox(
-			"Do not remember/forget my email adress");
 
 	private VerticalPanel buttonPanel = new VerticalPanel();
 	private CheckBox boxNTerm = new CheckBox("Only N-term CS");
@@ -250,7 +277,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		ptoomuch.setHeight("400px");
 		ptoomuch.setWidth("100%");
-		close.setUrl(GWT.getModuleBaseURL() + "Images/1353518245_Close.png");
+		close.setUrl(GWT.getModuleBaseURL() + "Images/1354635243_Close.png");
 		close.addStyleName("close");
 		ptoomuch.add(close);
 		ptoomuch.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
@@ -285,6 +312,151 @@ public class PrototypeEntryPoint implements EntryPoint {
 		about.add(new HTML(
 				"<div><font color=#737373 size=2><dd>Proteasix is a tool designed to predict proteases involved in peptide generation. Proteasix database contains 3500 entries about human protease/cleavage sites combinations. Information was collected from CutDB, Uniprot and publications.<br /><dd>Each peptide sequence is aligned with the full-length SWISS-PROT sequence to retrieve N-term and C-term cleavage sites (P4P3P2P1-P1'P2'P3'P4', with the scissile bond between the P1 and P1' residues).<br /><dd>All the cleavage sites are processed through the database to return known associated proteases. Proteases exhibit varying binding affinities for amino-acid sequences, ranging from a cleavage that will be strictly restricted to one or few amino-acids in given positions, to generic binding with little discrimination between different amino acids. Such amino-acid restrictions, when described in ENZYME (Expasy) are taken into account.<br /><dd>To balance the high stringency of a prediction based on octapeptides, the search pattern can be relaxed by allowing up to three amino-acid mismatches (still taking amino-acid restrictions into account).<br /><dd>If you have any question, please contact <a href=\"mailto:proteasix@gmail.com?subject=Proteasix\">us</a>!</font><div>"));
 		aboutTabPanel.add(about);
+
+				
+		// proteasemenu.addItem("Search Protease", proteaselistmenu);
+		// viewstatementHP.setWidth("1300px");
+		// viewstatementHP.add(proteasemenu);
+		// viewstatementHP
+		// .add(new HTML(StatementResources.INSTANCE.synchronous().getText()));
+		// viewstatement.add(viewstatementHP);
+		// collaborativeOptions.add(viewstatement,
+		// "Browse collaborative statements");
+		//
+		// addstatementHP.addStyleName("pSearchpanel");
+		// addstatementHP.setWidth("1300px");
+		//
+		//
+		// String proteaseList[] =
+		// ProteaseResources.INSTANCE.synchronous().getText().split("\n");
+		// for (String string : proteaseList) {
+		// oracle3.add(string);
+		// }
+		// proteaseSelection = new SuggestBox(oracle3);
+		// proteaseSelection.setWidth("100px");
+		// selectProteaseVP.add(new Label("Enter protease:"));
+		// selectProteaseVP.add(proteaseSelection);
+		// addstatementHP.add(selectProteaseVP);
+		//
+		// eventSuggestion.setHeight("25px");
+		// eventSuggestion.addItem("other (empty)");
+		// eventSuggestion.addItem("protein expression");
+		// eventSuggestion.addItem("gene expression");
+		// eventSuggestion.addItem("secretion");
+		// eventSuggestion.addItem("activity");
+		// eventVP.add(new Label ("Select event:"));
+		// eventVP.add(eventSuggestion);
+		// addstatementHP.add(eventVP);
+		//
+		// statusSuggestion.setHeight("25px");
+		// statusSuggestion.addItem("other (empty)");
+		// statusSuggestion.addItem("is detected");
+		// statusSuggestion.addItem("is modified");
+		// statusSuggestion.addItem("is increased");
+		// statusSuggestion.addItem("is decreased");
+		// statusVP.add(new Label ("Select status:"));
+		// statusVP.add(statusSuggestion);
+		// addstatementHP.add(statusVP);
+		//
+		// String diseaseList[] =
+		// DiseaseResources.INSTANCE.synchronous().getText().split("\n");
+		// for (String string : diseaseList) {
+		// oracle2.add(string);
+		// }
+		// diseaseSelection = new SuggestBox(oracle2);
+		// diseaseVP.add(new Label ("during 'disease' (optional):"));
+		// diseaseVP.add(diseaseSelection);
+		// addstatementHP.add(diseaseVP);
+		//
+		// speciesList.addItem("other (empty)");
+		// speciesList.addItem("(human)");
+		// speciesList.addItem("(mouse)");
+		// speciesList.addItem("(rat)");
+		// speciesVP.add(new Label ("in 'species' (optional):"));
+		// speciesVP.add(speciesList);
+		// addstatementHP.add(speciesVP);
+		//
+		// details.setWidth("300px");
+		// details.setHeight("18px");
+		// detailsVP.add(new Label ("... and more details?"));
+		// detailsVP.add(details);
+		// addstatementHP.add(detailsVP);
+		//
+		// addstatement.add(addstatementHP);
+		//
+		// statementreference.setText("Enter reference (PMID)");
+		// statementreference.addFocusListener(new FocusListener() {
+		// boolean defaultValue = true;
+		// public void onFocus(Widget sender) {
+		// if (defaultValue) {
+		// statementreference.setText("");
+		// defaultValue = false;
+		// }
+		// }
+		// public void onLostFocus(Widget sender) {
+		// if (statementreference.getText().equals("")) {
+		// statementreference.setText("Enter reference (PMID)");
+		// defaultValue = true;
+		// }
+		// }
+		// });
+		//
+		// referenceVP.add(statementreference);
+		// referenceVP.add(new HTML("<div><br /><div>"));
+		// statementcontributor.setText("Enter your name (optional)");
+		// statementcontributor.addFocusListener(new FocusListener() {
+		// boolean defaultValue = true;
+		// public void onFocus(Widget sender) {
+		// if (defaultValue) {
+		// statementcontributor.setText("");
+		// defaultValue = false;
+		// }
+		// }
+		// public void onLostFocus(Widget sender) {
+		// if (statementcontributor.getText().equals("")) {
+		// statementcontributor.setText("Enter your name (optional)");
+		// defaultValue = true;
+		// }
+		// }
+		// });
+		// referenceVP.add(statementcontributor);
+		// addstatement.add(referenceVP);
+		//
+		// buttonVP.add(exampleStatButton);
+		// buttonVP.add(new HTML("<div><br /><div>"));
+		// buttonVP.add(deleteStatButton);
+		// buttonVP.add(new HTML("<div><br /><div>"));
+		// buttonVP.add(checkStatButton);
+		// addstatement.add(buttonVP);
+		//
+		//
+		// addstatement
+		// .add(new HTML(
+		// "<div><hr style=\"height:10px;;border-width:0;color:#ccc;background-color:#ccc;\"></div>"));
+		// collaborativeOptions.add(addstatement, "Add statement");
+		// collaborativeOptions.selectTab(0);
+		// collaborativeTabPanel.add(collaborativeOptions);
+		//
+		//
+		// // Listen for mouse events on the Add button.
+		// deleteStatButton.addClickHandler(new ClickHandler() {
+		// public void onClick(ClickEvent event) {
+		// // keep search to setup prepared statement
+		// // init rpc
+		// eventSuggestion.setItemSelected(0, true);
+		// statusSuggestion.setItemSelected(0, true);
+		// statementcontributor.setText("Enter your name (optional)");
+		// statementreference.setText("Enter reference (PMID)");
+		// proteaseSelection.setText("Select protease");
+		// details.setText("Complete your statement here...");
+		//
+		// }
+		// });
+		// checkStatButton.addClickHandler(new ClickHandler() {
+		// public void onClick(ClickEvent event) {
+		// checkStatement();
+		// }
+		// });
 
 		// Set Up the PEPTIDESEARCH Widget
 		searchPepIdPanel.add(new HTML(
@@ -327,20 +499,6 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		searchbuttonandemailPanel.add(searchandbuttonPanel);
 		checkemailaddressPanel.add(sendemailChexbox);
-		checkemailaddressPanel.add(rememberemailChexbox);
-		oracle = new MultiWordSuggestOracle();
-		emailadressTextbox = new SuggestBox(oracle);
-		updateSuggestBox();
-		emailadressTextbox.addFocusListener(new FocusListener() {
-			@Override
-			public void onLostFocus(Widget sender) {
-			}
-
-			@Override
-			public void onFocus(Widget sender) {
-				emailadressTextbox.showSuggestionList();
-			}
-		});
 		emailaddressPanel.add(emailadressLabel);
 		emailaddressPanel.add(emailadressTextbox);
 		emailaddressPanel.add(checkemailaddressPanel);
@@ -387,8 +545,59 @@ public class PrototypeEntryPoint implements EntryPoint {
 		bottompage.setWidth("1300px");
 		bottompage.setHeight("100px");
 		searchTabPanel.add(bottompage);
+		
+		
+		dlTabPanel.add(dlbox);
+		dlbutton.setFocus(true);
+		dlTabPanel.add(dlbutton);
+		// Listen for mouse events on the Add button.
+//		dlbutton.addClickHandler(new ClickHandler() {
+//					public void onClick(ClickEvent event) {
+//						// keep search to setup prepared statement
+//						// init rpc
+//						String code = dlbox.getText();
+//						if (!code.equals("")){
+//						Window.open("ProteasixResults_" + code + ".zip", "download File", "");
+//						}
+//					}
+//				});
+
 		mainTabPanel.add(searchTabPanel, "Search");
+		// mainTabPanel.add(collaborativeTabPanel, "Collaborative statements");
 		mainTabPanel.add(aboutTabPanel, "About");
+//		mainTabPanel.add(dlTabPanel, "Dowload results");
+		mainTabPanel.addSelectionHandler(new SelectionHandler<Integer>() {
+			@Override
+			public void onSelection(
+					SelectionEvent<Integer> integerSelectionEvent) {
+				if (integerSelectionEvent.getSelectedItem() == 0) {
+					History.newItem("Search");
+				} else if (integerSelectionEvent.getSelectedItem() == 1) {
+					History.newItem("About");
+//				} else if (integerSelectionEvent.getSelectedItem() == 2) {
+//					History.newItem("Download");
+				}
+			}
+		});
+
+		History.addValueChangeHandler(new ValueChangeHandler<String>() {
+			@Override
+			public void onValueChange(
+					ValueChangeEvent<String> stringValueChangeEvent) {
+				String historyToken = stringValueChangeEvent.getValue();
+
+				if (historyToken.equals("Search")) {
+					mainTabPanel.selectTab(0);
+				} else if (historyToken.equals("About")) {
+					mainTabPanel.selectTab(1);
+//				} else if (historyToken.equals("Download")) {
+//					mainTabPanel.selectTab(2);
+				} else {
+					mainTabPanel.selectTab(0);
+				}
+			}
+		});
+
 		mainTabPanel.selectTab(0);
 
 		bottompage
@@ -482,22 +691,12 @@ public class PrototypeEntryPoint implements EntryPoint {
 						&& emailadressTextbox.getText().contains("@")) {
 					emailvalidity = true;
 					String username = emailadressTextbox.getValue();
-					if (username != null && !username.equals("")
-							&& !cookieContains(username)
-							&& rememberemailChexbox.getValue() == false) {
-						addToCookie(username);
-						emailadressTextbox.setValue("");
-						updateSuggestBox();
-					} else if (rememberemailChexbox.getValue() == true) {
-						removeFromCookie(username);
-						updateSuggestBox();
-					}
 					close.setUrl(GWT.getModuleBaseURL()
 							+ "Images/1354635243_Close.png");
 					close.addStyleName("close");
 					pemail.add(close);
 					HTML lblemail = new HTML(
-							"Your results will be sent as soon as possible."
+							"Your results will be sent as soon as possible <br /> (don't forget to check your spambox)."
 									+ "<br />Thank you for your search!");
 					lblemail.addStyleName("lResult");
 					pemail.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
@@ -631,6 +830,54 @@ public class PrototypeEntryPoint implements EntryPoint {
 	 * searchButton or presses enter in the searchBox.
 	 */
 
+	private void checkStatement() {
+		// checkStatementHP.clear();
+		// int proteaseselectionindex =
+		// proteaseListSuggestion.getSelectedIndex();
+		// String proteaseselection =
+		// proteaseListSuggestion.getItemText(proteaseselectionindex);
+		// String proteaseother = proteaseNotFound.getText().toUpperCase();
+		// String protease = "";
+		// if (!proteaseselection.equals("Select Protease")) {
+		// protease = proteaseselection;
+		// } else if (!proteaseother.contains("NOT FOUND")){
+		// protease = proteaseother;
+		// }
+		//
+		// int eventselectionindex = eventSuggestion.getSelectedIndex();
+		// String eventselection =
+		// eventSuggestion.getItemText(eventselectionindex);
+		// eventselection = (!eventselection.equals("Select event") &&
+		// !eventselection.contains("other")) ? eventselection : "";
+		//
+		// int statusselectionindex = statusSuggestion.getSelectedIndex();
+		// String statusselection =
+		// statusSuggestion.getItemText(statusselectionindex);
+		// statusselection = (!statusselection.equals("Select status") &&
+		// !statusselection.contains("other")) ? statusselection : "";
+		//
+		// String statementtext =
+		// !statement.getText().equals("Complete your statement here...") ?
+		// statement.getText() : "";
+		// statementtext = !statement.getText().endsWith(".") ? (statementtext +
+		// ".") : statementtext;
+		//
+		// String pmid =
+		// !statementreference.getText().equals("Enter reference (PMID)") ?
+		// "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/"
+		// + statementreference.getText() + "\"target=\"_blank\">"
+		// + statementreference.getText() + "</a>" : "-";
+		//
+		// String contributor =
+		// !statementcontributor.getText().equals("Enter your name (optional)")
+		// ? statementcontributor.getText() : "Anonymous";
+		//
+		// checkStatementHP.add(new HTML(protease + " " + eventselection + " " +
+		// statusselection + " " + statementtext + " PMID: " + pmid +
+		// ". Contributor: " + contributor + "."));
+		// addstatement.add(checkStatementHP);
+	}
+
 	private void generateSearchRequest_2() throws IOException {
 
 		String subUni = pepUniArea.getText().toUpperCase().trim();
@@ -731,8 +978,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 				// TODO modify here
 				// draw PEPTIDE info
 
-					drawResultbyPeptideInfo_2(queryOut);
-				
+				drawResultbyPeptideInfo_2(queryOut);
 
 			}
 		};
@@ -790,7 +1036,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		QueryOutput[] CSOutputOK = new QueryOutput[processedCSValidityOKList
 				.size()];
 		processedCSValidityOKList.toArray(CSOutputOK);
-		
+
 		LinkedList<QueryOutput> processedNONOutput = getPeptidewithValidityNON(queryCSOut);
 		QueryOutput[] queryNONOut = new QueryOutput[processedNONOutput.size()];
 		processedNONOutput.toArray(queryNONOut);
@@ -799,14 +1045,29 @@ public class PrototypeEntryPoint implements EntryPoint {
 		QueryOutput[] queryProtOut = new QueryOutput[processedProteaseOutput
 				.size()];
 		processedProteaseOutput.toArray(queryProtOut);
-		
+
+		Date date = new Date();
+		DateTimeFormat ft = DateTimeFormat.getFormat("yyyyMMddhhmmss");
+
+		String name[] = emailadressTextbox.getText().split("@");
+		String user = name[0];
+
+		String code =  ft.format(date) + "_" + user ;
+
 		String subject = "Proteasix results";
-		
+
 		String body = "<p>Dear user, <br />Please find enclosed your results. The ProteaseView file contains a summary of observed or predicted"
 				+ " cleavage site associations for each protease. The CleavageSiteView file contains the full list of "
-				+ "observed or predicted protease/cleavage site associations.<br />";
+				+ "observed or predicted protease/cleavage site associations.<br /><br />"
+//				+ "If you can't see the file attached, please go to <a href=\"http://www.proteasix.org\"target=\"_blank\">http://www.proteasix.org</a>, \"Download results\" tab<br />" +
+//				"Enter this code: <font><b>" + code + "</b></font> and press \"Download\" (please note that your results will be deleted after 7 days).";
+		+ "If you can't see the files attached, please go to (open the link in your browser, right click on the page > save as):<br />" +
+		" <font><b> Cleavage Site table </b></font>: <a href=\"http://rpc295.cs.man.ac.uk:8080/ProteasixPrototype/" + code + "/CleavageSiteView_"+ code+".txt\"target=\"_blank\">http://rpc295.cs.man.ac.uk:8080/ProteasixPrototype/" + code + "/CleavageSiteView_"+ code+".txt</a><br />" +
+		" <font><b> Protease table </b></font>: <a href=\"http://rpc295.cs.man.ac.uk:8080/ProteasixPrototype/" + code + "/ProteaseView_"+ code+".txt\"target=\"_blank\">http://rpc295.cs.man.ac.uk:8080/ProteasixPrototype/" + code + "/ProteaseView_"+ code+".txt</a><br /><br />" + 
+		"(please note that your results will be deleted from our server after 7 days)<br />";
 		if (queryNONOut.length != 0) {
-			body = body + "<br /><font><b>WARNING: some of your peptides could not be used for the search due to inconstitencies with the full-length parental protein:<br /></b></font>";
+			body = body
+					+ "<br /><font><b>WARNING: some of your peptides could not be used for the search due to inconstitencies with the full-length parental protein:<br /></b></font>";
 			String errormsg = "";
 			for (QueryOutput queryOutput : queryNONOut) {
 				if (queryOutput.peptide.Pep_sequence.equals("")) {
@@ -820,11 +1081,10 @@ public class PrototypeEntryPoint implements EntryPoint {
 							+ " (<a href=\"http://www.uniprot.org/uniprot/"
 							+ queryOutput.substrate.S_Uniprotid
 							+ "\"target=\"_blank\">"
-							+ queryOutput.substrate.S_Uniprotid + "</a>).<br />";
+							+ queryOutput.substrate.S_Uniprotid
+							+ "</a>).<br />";
 				} else {
-					errormsg = errormsg
-							+ "<dd>- "
-							+ queryOutput.peptide.Pep_Id
+					errormsg = errormsg + "<dd>- " + queryOutput.peptide.Pep_Id
 							+ ": the sequence you specified for this peptide ("
 							+ queryOutput.peptide.Pep_sequence
 							+ ") can not be found in "
@@ -832,15 +1092,17 @@ public class PrototypeEntryPoint implements EntryPoint {
 							+ " (<a href=\"http://www.uniprot.org/uniprot/"
 							+ queryOutput.substrate.S_Uniprotid
 							+ "\"target=\"_blank\">"
-							+ queryOutput.substrate.S_Uniprotid + "</a>).<br />";
+							+ queryOutput.substrate.S_Uniprotid
+							+ "</a>).<br />";
 				}
 			}
 			body = body + errormsg + "</dd>";
 		}
-		
-		body = body + "<br />Enjoy your results!<br /><br/>The Proteasix team.<br /><br />"
+
+		body = body
+				+ "<br />Enjoy your results!<br /><br/>The Proteasix team.<br /><br />"
 				+ "This is an automatic email. Please do not reply.";
-		
+
 		// Initialize the service proxy.
 		if (callProvider == null) {
 			callProvider = GWT.create(DBConnection.class);
@@ -866,10 +1128,12 @@ public class PrototypeEntryPoint implements EntryPoint {
 		if (emailadressTextbox.getText().contains("@")) {
 			String to = emailadressTextbox.getText();
 			// Make the call to the stock price service.
-			callProvider.runMailer(to, subject, body, CSOutputOK, queryProtOut, callback);
+			callProvider.runMailer(code, to, subject, body, CSOutputOK,
+					queryProtOut, callback);
 		}
 	}
 
+	
 	private void drawResultbyPeptideInfo_2(QueryOutput[] queryCSOut) {
 
 		// if null nothing to do, then exit
@@ -1144,7 +1408,6 @@ public class PrototypeEntryPoint implements EntryPoint {
 		return processedCSValidityOKList;
 	}
 
-	
 	private int getTotalProteaseConfidence(int iConfidence,
 			String resultConfidence) {
 		if (!resultConfidence.equals("")) {
@@ -1152,57 +1415,6 @@ public class PrototypeEntryPoint implements EntryPoint {
 			iConfidence = resultConfidenceArray.length;
 		}
 		return iConfidence;
-	}
-
-	private void updateSuggestBox() {
-		oracle.clear();
-		List<String> usernames = getUsernames();
-		oracle.setDefaultSuggestionsFromText(usernames);
-		for (String username : usernames) {
-			oracle.add(username);
-		}
-	}
-
-	private List<String> getUsernames() {
-		ArrayList<String> usernames = new ArrayList<String>();
-		String users = Cookies.getCookie("usernames");
-		if (users != null) {
-			for (String username : users.split(":")) {
-				usernames.add(username);
-			}
-		}
-		return usernames;
-	}
-
-	private boolean cookieContains(String s) {
-		boolean contains = false;
-		String users = Cookies.getCookie("usernames");
-		if (users != null) {
-			for (String username : users.split(":")) {
-				if (username.equals(s))
-					contains = true;
-			}
-		}
-		return contains;
-	}
-
-	private void addToCookie(String username) {
-		String users = Cookies.getCookie("usernames");
-		if (users != null)
-			Cookies.setCookie("usernames", users + ":" + username, new Date(
-					new Date().getTime() + forgetMeIn));
-		else
-			Cookies.setCookie("usernames", username,
-					new Date(new Date().getTime() + forgetMeIn));
-	}
-
-	private void removeFromCookie(String username) {
-		String users = Cookies.getCookie("usernames");
-		if (users != null)
-			Cookies.removeCookie("usernames", username);
-		else
-			Cookies.removeCookie("usernames", username);
-
 	}
 
 	private void createErrorTable(QueryOutput[] ErrorArray,
@@ -1455,41 +1667,36 @@ public class PrototypeEntryPoint implements EntryPoint {
 			}
 		};
 
-		
-		 Column<QueryOutput, SafeHtml> Prot_OMIM = new Column<QueryOutput,
-		 SafeHtml>(
-		 new SafeHtmlCell()) {
-		 @Override
-		 public SafeHtml getValue(QueryOutput result) {
-		 String omim = result.protease.P_OMIM;
-		 if (omim.equals("-"))
-		 return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
-		 return new SafeHtmlBuilder().appendHtmlConstant(
-		 "<font size=\"1\"><a href=\"http://omim.org/entry/"
-		 + omim
-		 + "\"target=\"_blank\">" + omim + "</a>")
-		 .toSafeHtml();
-		 }
-		 };
-		 
+		Column<QueryOutput, SafeHtml> Prot_OMIM = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String omim = result.protease.P_OMIM;
+				if (omim.equals("-"))
+					return new SafeHtmlBuilder().appendHtmlConstant("-")
+							.toSafeHtml();
+				return new SafeHtmlBuilder()
+						.appendHtmlConstant(
+								"<font size=\"1\"><a href=\"http://omim.org/entry/"
+										+ omim + "\"target=\"_blank\">" + omim
+										+ "</a>").toSafeHtml();
+			}
+		};
 
-		 Column<QueryOutput, SafeHtml> Prot_Ensembl = new Column<QueryOutput,
-		 SafeHtml>(
-		 new SafeHtmlCell()) {
-		 @Override
-		 public SafeHtml getValue(QueryOutput result) {
-		 String ensembl = result.protease.P_Ensembl;
-		 if (ensembl.equals("N/A") || ensembl.equals("") )
-		 return new SafeHtmlBuilder().appendHtmlConstant("-").toSafeHtml();
-		 return new SafeHtmlBuilder().appendHtmlConstant(
-		 "<font size=\"1\"><a href=\"http://www.ebi.ac.uk/gxa/gene/"
-		 + ensembl
-		 + "\"target=\"_blank\">" + ensembl + "</a>")
-		 .toSafeHtml();
-		 }
-		 };
-
-
+		Column<QueryOutput, SafeHtml> Prot_Ensembl = new Column<QueryOutput, SafeHtml>(
+				new SafeHtmlCell()) {
+			@Override
+			public SafeHtml getValue(QueryOutput result) {
+				String ensembl = result.protease.P_Ensembl;
+				if (ensembl.equals("N/A") || ensembl.equals(""))
+					return new SafeHtmlBuilder().appendHtmlConstant("-")
+							.toSafeHtml();
+				return new SafeHtmlBuilder().appendHtmlConstant(
+						"<font size=\"1\"><a href=\"http://www.ebi.ac.uk/gxa/gene/"
+								+ ensembl + "\"target=\"_blank\">" + ensembl
+								+ "</a>").toSafeHtml();
+			}
+		};
 
 		Prot_Protease.setSortable(true);
 		Prot_ConfidenceSPSL.setSortable(true);
@@ -1520,7 +1727,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 		proteaseTable.addColumn(Prot_Ensembl, "Gene Expression Atlas");
 		proteaseTable.setColumnWidth(Prot_OMIM, 5, Unit.EM);
 		proteaseTable.setColumnWidth(Prot_Ensembl, 5, Unit.EM);
-		
+
 		Proteaseresult.add(proteaseTable);
 		// Create a data provider.
 		ListDataProvider<QueryOutput> csdataProvider = new ListDataProvider<QueryOutput>();
@@ -1873,17 +2080,16 @@ public class PrototypeEntryPoint implements EntryPoint {
 						.toSafeHtml();
 			}
 		};
-		
-		Column<QueryOutput, SafeHtml> CS_MatrixDB= new Column<QueryOutput, SafeHtml>(
+
+		Column<QueryOutput, SafeHtml> CS_MatrixDB = new Column<QueryOutput, SafeHtml>(
 				new SafeHtmlCell()) {
 			@Override
 			public SafeHtml getValue(QueryOutput result) {
 				String symbol = result.MatrixDB;
 				String interaction = null;
-				interaction = !symbol.equals("-") ? "<a href=\""+ symbol
+				interaction = !symbol.equals("-") ? "<a href=\"" + symbol
 						+ "\"target=\"_blank\">Yes</a>" : "-";
-				return new SafeHtmlBuilder().appendHtmlConstant(
-						interaction)
+				return new SafeHtmlBuilder().appendHtmlConstant(interaction)
 						.toSafeHtml();
 			}
 		};
@@ -2089,7 +2295,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 		csTable.addColumn(CS_PepSeq, "Peptide Sequence");
 		csTable.addColumn(CS_CSSeq, "\u25B2Searched\u25BC CS");
 		csTable.addColumn(CS_Protease, "\u25B2Protease\u25BC");
-		csTable.addColumn(CS_MatrixDB, "\u25B2Interaction\u25BC in MatrixDB");
+		csTable.addColumn(CS_MatrixDB,
+				"\u25B2Substrate/Protease\u25BC interaction (MatrixDB)");
 		csTable.addColumn(CS_ConfidenceSPSL, "\u25B2Confidence\u25BC ++++");
 		csTable.addColumn(CS_ConfidenceSS, "\u25B2Confidence\u25BC +++");
 		// csTable.addColumn(CS_ConfidenceHP, "\u25B2Confidence\u25BC ++");
@@ -2199,7 +2406,7 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 		// We know that the data is sorted alphabetically by default.
 		csTable.getColumnSortList().push(CS_Protease);
-		
+
 		ListHandler<QueryOutput> matrixDBColSortHandler = new ListHandler<QueryOutput>(
 				cslist);
 		matrixDBColSortHandler.setComparator(CS_MatrixDB,
@@ -2211,10 +2418,8 @@ public class PrototypeEntryPoint implements EntryPoint {
 
 						// Compare the symbol columns.
 						if (o1 != null) {
-							return (o2 != null) ? o1.MatrixDB
-									.toUpperCase().compareTo(
-											o2.MatrixDB.toUpperCase())
-									: 1;
+							return (o2 != null) ? o1.MatrixDB.toUpperCase()
+									.compareTo(o2.MatrixDB.toUpperCase()) : 1;
 						}
 						return -1;
 					}

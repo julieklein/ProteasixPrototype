@@ -1,21 +1,21 @@
 package com.google.gwt.proteasixprototype.server;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
+
 import java.io.DataInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
+
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,8 +82,7 @@ public class DB_Protease extends DB_Conn {
 		// nothing to do
 	}
 
-	public QueryOutput[] getResultbySubstrateInfo(QueryInput[] queryFromWebsite)
-			throws Throwable {
+	public QueryOutput[] getResultbySubstrateInfo(QueryInput[] queryFromWebsite) {
 
 		// // TODO modify here
 		 for (QueryInput queryInput : queryFromWebsite) {
@@ -248,8 +247,9 @@ public class DB_Protease extends DB_Conn {
 		int rsSizeA = 0;
 		String querySubMatrix = "SELECT * FROM SUBSTITUTIONMATRIX";
 		Connection connectionA = getConn();
-		Statement sA = connectionA.createStatement();
+		
 		try {
+			Statement sA = connectionA.createStatement();
 			ResultSet resultA = sA.executeQuery(querySubMatrix);
 			rsSizeA = getResultSetSize(resultA);
 			int i = 0;
@@ -273,8 +273,9 @@ public class DB_Protease extends DB_Conn {
 		int rsSize = 0;
 		String queryProtease = "SELECT * FROM PROTEASE WHERE P_Taxon = 'Human'";
 		Connection connection = getConn();
-		Statement s = connection.createStatement();
+		
 		try {
+			Statement s = connection.createStatement();
 			ResultSet result = s.executeQuery(queryProtease);
 			rsSize = getResultSetSize(result);
 			while (result.next()) {
@@ -335,14 +336,32 @@ public class DB_Protease extends DB_Conn {
 						: "B";
 				processedOut.mm3 = queryOutput.confidence.equals(mm3) ? "A"
 						: "B";
-				String htmlcontent1 = getHtmlcontent(
-						new URL(
-								"http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.substrate.S_Uniprotid + "_" +  queryOutput.protease.P_Uniprotid + "&class=Association"))
-						.toString();
-				String htmlcontent2 = getHtmlcontent(
-						new URL(
-								"http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.protease.P_Uniprotid + "_" +  queryOutput.substrate.S_Uniprotid + "&class=Association"))
-						.toString();
+				String htmlcontent1=null;
+				try {
+					htmlcontent1 = getHtmlcontent(
+							new URL(
+									"http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.substrate.S_Uniprotid + "_" +  queryOutput.protease.P_Uniprotid + "&class=Association"))
+							.toString();
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				String htmlcontent2=null;
+				try {
+					htmlcontent2 = getHtmlcontent(
+							new URL(
+									"http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.protease.P_Uniprotid + "_" +  queryOutput.substrate.S_Uniprotid + "&class=Association"))
+							.toString();
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				if (!htmlcontent1.contains("not found")) {
 					processedOut.MatrixDB = "http://matrixdb.ibcp.fr/cgi-bin/model/report/default?name=" + queryOutput.substrate.S_Uniprotid + "_" +  queryOutput.protease.P_Uniprotid + "&class=Association";
 				} else if (!htmlcontent2.contains("not found")) {

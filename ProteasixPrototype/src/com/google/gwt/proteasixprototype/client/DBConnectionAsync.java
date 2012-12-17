@@ -1,11 +1,11 @@
 package com.google.gwt.proteasixprototype.client;
 
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.util.List;
-
 import com.google.gwt.proteasixprototype.client.QueryInput;
 import com.google.gwt.proteasixprototype.client.QueryOutput;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -20,7 +20,7 @@ public interface DBConnectionAsync {
 	public void getResultInfo(QueryInput[] inputObject,
 			AsyncCallback<QueryOutput[]> callback);
 
-	void sendMail(String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut,
+	void sendMail(String code, String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut,
 			AsyncCallback callback);
 
 	void setDebug(boolean debug, AsyncCallback callback);
@@ -32,7 +32,7 @@ public interface DBConnectionAsync {
 
 	void setSession(String user, String pass, AsyncCallback callback);
 
-	void runMailer(String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut,
+	void runMailer(String code, String to, String subject, String body, QueryOutput[] queryCSOut, QueryOutput[] queryProtOut,
 			AsyncCallback callback);
 
 }

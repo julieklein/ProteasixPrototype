@@ -1,19 +1,17 @@
 package com.google.gwt.proteasixprototype.server;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
@@ -25,9 +23,8 @@ import javax.mail.Transport;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+
 import com.google.gwt.proteasixprototype.client.DBConnection;
-import com.google.gwt.proteasixprototype.client.ProteaseData;
-import com.google.gwt.proteasixprototype.client.PrototypeEntryPoint;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.gwt.proteasixprototype.client.QueryInput;
 import com.google.gwt.proteasixprototype.client.QueryOutput;
@@ -62,7 +59,7 @@ public class MySQLConnection extends RemoteServiceServlet implements
 	private String mm3 = "3mm";
 
 	@Override
-	public QueryOutput[] getResultInfo(QueryInput[] queryIn) throws Throwable {
+	public QueryOutput[] getResultInfo(QueryInput[] queryIn) {
 
 		// TODO Auto-generated method stub
 		DB_Protease db = new DB_Protease();
@@ -77,6 +74,7 @@ public class MySQLConnection extends RemoteServiceServlet implements
 	 */
 	public void setProperties(String from, String host) {
 		props = new Properties();
+		props.put("mail.transport.protocol", "smtp");
 		props.put("mail.smtp.host", host);
 		props.put("mail.from", from);
 		props.put("mail.smtp.auth", "true");
@@ -111,12 +109,25 @@ public class MySQLConnection extends RemoteServiceServlet implements
 	/*
 	 * Sends a mail
 	 */
-	public void sendMail(String to, String subject, String body,
+	public void sendMail(String code, String to, String subject, String body,
 			QueryOutput[] queryCSOut, QueryOutput[] queryProtOut) {
 
-	
+		try {
+			String strDirectory = "/usr/local/apache-tomcat-5.5.28/webapps/ProteasixPrototype/"
+					+ code;
+			// Create one directory
+			boolean success = (new File(strDirectory)).mkdir();
+			if (success) {
+				System.out.println("Directory: " + strDirectory + " created");
+			}
+		} catch (Exception e) {// Catch exception if any
+			System.err.println("Error: " + e.getMessage());
+		}
 
-		File file = new File("CleavageSiteView.txt");
+		String csfilename = "/usr/local/apache-tomcat-5.5.28/webapps/ProteasixPrototype/"
+				+ code + "/CleavageSiteView_" + code + ".txt";
+		File file = new File(csfilename);
+
 		try {
 			PrintStream attachment = new PrintStream(file);
 			populateCSHeaders(attachment);
@@ -129,7 +140,10 @@ public class MySQLConnection extends RemoteServiceServlet implements
 			e.printStackTrace();
 		}
 
-		File file2 = new File("ProteaseView.txt");
+		String protfilename = "/usr/local/apache-tomcat-5.5.28/webapps/ProteasixPrototype/"
+				+ code + "/ProteaseView_" + code + ".txt";
+		File file2 = new File(protfilename);
+
 		try {
 			PrintStream attachment = new PrintStream(file2);
 			populateProtHeaders(attachment);
@@ -141,6 +155,80 @@ public class MySQLConnection extends RemoteServiceServlet implements
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		// String zipFile =
+		// "/usr/local/apache-tomcat-5.5.28/webapps/ProteasixPrototype/ProteasixResults_"
+		// + code + ".zip";
+		// System.out.println(zipFile);
+		//
+		// try {
+		// String[] sourceFiles = {protfilename, csfilename};
+		//
+		// // create byte buffer
+		// byte[] buffer = new byte[1024];
+		//
+		// /*
+		// * To create a zip file, use
+		// *
+		// * ZipOutputStream(OutputStream out) constructor of ZipOutputStream
+		// * class.
+		// */
+		//
+		// // create object of FileOutputStream
+		// FileOutputStream fout = new FileOutputStream(zipFile);
+		// // create object of ZipOutputStream from FileOutputStream
+		// ZipOutputStream zout = new ZipOutputStream(fout);
+		// for (int i = 0; i < sourceFiles.length; i++) {
+		//
+		// System.out.println("Adding " + sourceFiles[i]);
+		// // create object of FileInputStream for source file
+		// FileInputStream fin = new FileInputStream(sourceFiles[i]);
+		//
+		// /*
+		// * To begin writing ZipEntry in the zip file, use
+		// *
+		// * void putNextEntry(ZipEntry entry) method of ZipOutputStream
+		// * class.
+		// *
+		// * This method begins writing a new Zip entry to the zip file
+		// * and positions the stream to the start of the entry data.
+		// */
+		//
+		// zout.putNextEntry(new ZipEntry(sourceFiles[i]));
+		//
+		// /*
+		// * After creating entry in the zip file, actually write the
+		// * file.
+		// */
+		// int length;
+		//
+		// while ((length = fin.read(buffer)) > 0) {
+		// zout.write(buffer, 0, length);
+		// }
+		//
+		// /*
+		// * After writing the file to ZipOutputStream, use
+		// *
+		// * void closeEntry() method of ZipOutputStream class to close
+		// * the current entry and position the stream to write the next
+		// * entry.
+		// */
+		//
+		// zout.closeEntry();
+		//
+		// // close the InputStream
+		// fin.close();
+		//
+		// }
+		//
+		// // close the ZipOutputStream
+		// zout.close();
+		//
+		// System.out.println("Zip file has been created!");
+		//
+		// } catch (IOException ioe) {
+		// System.out.println("IOException :" + ioe);
+		// }
 
 		try {
 			// MimeMessage
@@ -157,6 +245,14 @@ public class MySQLConnection extends RemoteServiceServlet implements
 			MimeBodyPart mbp1 = new MimeBodyPart();
 			mbp1.setContent(body, "text/html");
 			mmp.addBodyPart(mbp1);
+
+			// // Create Attachment
+			// MimeBodyPart mbp2 = new MimeBodyPart();
+			// File zip = new File(zipFile);
+			// FileDataSource fds = new FileDataSource(zip);
+			// mbp2.setDataHandler(new DataHandler(fds));
+			// mbp2.setFileName(fds.getName());
+			// mmp.addBodyPart(mbp2);
 
 			// Create Attachment
 			MimeBodyPart mbp2 = new MimeBodyPart();
@@ -176,8 +272,9 @@ public class MySQLConnection extends RemoteServiceServlet implements
 
 			// Send The Message
 			Transport.send(msg);
-			file.delete();
-			file2.delete();
+//			file.delete();
+//			file2.delete();
+			// zip.delete();
 
 			if (debug)
 				try {
@@ -191,7 +288,6 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		}
 	}
 
-
 	/*
 	 * Debug Message
 	 */
@@ -201,12 +297,12 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		this.debug = debug;
 	}
 
-	public void runMailer(String to, String subject, String body,
+	public void runMailer(String code, String to, String subject, String body,
 			QueryOutput[] queryCSOut, QueryOutput[] queryProtOut) {
 
 		this.setProperties("proteasix@gmail.com", "smtp.gmail.com");
 		this.setSession("proteasix@gmail.com", "proteasix");
-		this.sendMail(to, subject, body, queryCSOut, queryProtOut);
+		this.sendMail(code, to, subject, body, queryCSOut, queryProtOut);
 
 	}
 
@@ -238,6 +334,8 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		csvWriter.print("Confidence +-");
 		csvWriter.print("\t");
 		csvWriter.print("Confidence +--");
+		csvWriter.print("\t");
+		csvWriter.print("Substrate/Protease interaction (MatrixDB)s");
 		csvWriter.print("\t");
 		csvWriter.print("External Link");
 		csvWriter.print("\t");
@@ -311,6 +409,8 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		csvWriter.print("\t");
 		csvWriter.print(smm3);
 		csvWriter.print("\t");
+		csvWriter.print(out.MatrixDB);
+		csvWriter.print("\t");
 		csvWriter.print(out.cleavagesite.CS_Externallink);
 		csvWriter.print("\t");
 		csvWriter.print(out.cleavagesite.CS_Pmid);
@@ -325,11 +425,10 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		}
 		return iConfidence;
 	}
-	
+
 	private void populateProtData(PrintStream csvWriter, QueryOutput out) {
 		// System.out.println(cleavageSiteDBEntry);
 
-		
 		String protease = out.protease.P_Symbol;
 
 		csvWriter.print(protease);
@@ -337,10 +436,10 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		csvWriter.print(out.protease.totalSPSL);
 		csvWriter.print("\t");
 		csvWriter.print(out.protease.totalSS);
-//		csvWriter.print("\t");
-//		csvWriter.print(out.protease.totalHP);
-//		csvWriter.print("\t");
-//		csvWriter.print(out.protease.totalP);
+		// csvWriter.print("\t");
+		// csvWriter.print(out.protease.totalHP);
+		// csvWriter.print("\t");
+		// csvWriter.print(out.protease.totalP);
 		csvWriter.print("\t");
 		csvWriter.print(out.protease.total1mm);
 		csvWriter.print("\t");
@@ -348,14 +447,17 @@ public class MySQLConnection extends RemoteServiceServlet implements
 		csvWriter.print("\t");
 		csvWriter.print(out.protease.total3mm);
 		csvWriter.print("\t");
-		csvWriter.print(out.protease.totalSPSL + out.protease.totalSS + out.protease.total1mm + out.protease.total2mm + out.protease.total3mm);
+		csvWriter.print(out.protease.totalSPSL + out.protease.totalSS
+				+ out.protease.total1mm + out.protease.total2mm
+				+ out.protease.total3mm);
 		csvWriter.print("\t");
 		csvWriter.print("http://omim.org/entry/" + out.protease.P_OMIM);
 		csvWriter.print("\t");
-		csvWriter.print("http://www.ebi.ac.uk/gxa/gene/" + out.protease.P_Ensembl);
+		csvWriter.print("http://www.ebi.ac.uk/gxa/gene/"
+				+ out.protease.P_Ensembl);
 		csvWriter.print("\n");
 	}
-	
+
 	private void populateProtHeaders(PrintStream csvWriter) {
 		csvWriter.print("ProteaseSymbol");
 		csvWriter.print("\t");
